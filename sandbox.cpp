@@ -26,6 +26,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #endif
+#include <cstdio>
 #include "armap.h"
 
 const int GLWIDTH = 640;
@@ -63,19 +64,32 @@ void GLDisplay()
 
 void GLKeyboard(unsigned char key, int x, int y)
 {
-    if (key == 27) {
-        exit(0);
+    switch (key) {
+        case 27:
+            glutDestroyWindow(window);
+            return;
+        case 'q':
+            mode = 0;
+            kinect->stopDepth();
+            kinect->startVideo();
+            return;
+        case 'w':
+            mode = 1;
+            kinect->stopVideo();
+            kinect->startDepth();
+            return;
     }
-    if (key == 'q') {
-        mode = 0;
-        kinect->stopDepth();
-        kinect->startVideo();
-    }
-    if (key == 'w') {
-        mode = 1;
-        kinect->stopVideo();
-        kinect->startDepth();
-    }
+}
+
+void GLMouse(int button, int state, int x, int y)
+{
+    printf("mouse: %d %d %d %d\n", button, state, x, y);
+}
+
+
+void GLMotion(int x, int y)
+{
+    printf("motion: %d %d\n", x, y);
 }
 
 void GLReshape(int width, int height)
@@ -118,9 +132,12 @@ int main(int argc, char **argv)
     glutIdleFunc(&GLDisplay);
     glutReshapeFunc(&GLReshape);
     glutKeyboardFunc(&GLKeyboard);
+    glutMouseFunc(&GLMouse);
+    glutMotionFunc(&GLMotion);
     GLInit(GLWIDTH, GLHEIGHT);
     kinect = new Kinect();
     kinect->startVideo();
     glutMainLoop();
+    delete kinect;
     return 0;
 }
