@@ -35,7 +35,7 @@ GLuint tex, window;
 int mode = 0; // 0 - video, 1 - depth
 uint8_t depth8[640*480];
 
-void DrawGLScene()
+void GLDisplay()
 {
     glBindTexture(GL_TEXTURE_2D, tex);
     if (mode == 0) {
@@ -61,7 +61,7 @@ void DrawGLScene()
     glutSwapBuffers();
 }
 
-void keyPressed(unsigned char key, int x, int y)
+void GLKeyboard(unsigned char key, int x, int y)
 {
     if (key == 27) {
         exit(0);
@@ -78,7 +78,7 @@ void keyPressed(unsigned char key, int x, int y)
     }
 }
 
-void ReSizeGLScene(int width, int height)
+void GLReshape(int width, int height)
 {
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -88,7 +88,7 @@ void ReSizeGLScene(int width, int height)
     glLoadIdentity();
 }
 
-void InitGL(int width, int height)
+void GLInit(int width, int height)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
@@ -104,7 +104,7 @@ void InitGL(int width, int height)
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    ReSizeGLScene(width, height);
+    GLReshape(width, height);
 }
 
 int main(int argc, char **argv)
@@ -114,11 +114,11 @@ int main(int argc, char **argv)
     glutInitWindowSize(GLWIDTH, GLHEIGHT);
     glutInitWindowPosition(0, 0);
     window = glutCreateWindow("ARMap SandBox");
-    glutDisplayFunc(&DrawGLScene);
-    glutIdleFunc(&DrawGLScene);
-    glutReshapeFunc(&ReSizeGLScene);
-    glutKeyboardFunc(&keyPressed);
-    InitGL(GLWIDTH, GLHEIGHT);
+    glutDisplayFunc(&GLDisplay);
+    glutIdleFunc(&GLDisplay);
+    glutReshapeFunc(&GLReshape);
+    glutKeyboardFunc(&GLKeyboard);
+    GLInit(GLWIDTH, GLHEIGHT);
     kinect = new Kinect();
     kinect->startVideo();
     glutMainLoop();
