@@ -17,81 +17,110 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <SDL.h>
+#if defined(__APPLE__)
+#include <GLUT/glut.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
+#include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 #include "armap.h"
 
-#define RESX 640
-#define RESY 480
-#define BPP 32
-#define FRAMESLEEP 200
-#define FULLSCREEN 0
-
+const int GLWIDTH = 640;
+const int GLHEIGHT = 480;
 Kinect *kinect;
-SDL_Surface *screen;
-volatile int quit = 0;
-int mode = 0;
+GLuint tex, window;
+int mode = 0; // 0 - video, 1 - depth
+uint8_t depth8[640*480];
 
-void draw()
+void DrawGLScene()
 {
-   // SDL_LockSurface(screen);
-   uint32_t *p = (uint32_t *)screen->pixels;
+    glBindTexture(GL_TEXTURE_2D, tex);
+    if (mode == 0) {
+        glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
+    }
+    if (mode == 1) {
+        uint16_t *d = kinect->getDepth();
+        for (int i = 0; i < 640*480; i++) {
+            unsigned char c = d[i]*255/5000;
+            if (c) c = 255 - c;
+            depth8[i] = c;
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
+    }
+    glBegin(GL_TRIANGLE_FAN);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
+    glTexCoord2f(1, 0); glVertex3f(GLWIDTH, 0, 0);
+    glTexCoord2f(1, 1); glVertex3f(GLWIDTH, GLHEIGHT, 0);
+    glTexCoord2f(0, 1); glVertex3f(0, GLHEIGHT, 0);
 
-   if (mode == 0) {
-       uint8_t *v = kinect->getVideo();
-       for (int i = 0; i < 640*480; i++) {
-           p[i] = v[i*3+2] | (v[i*3+1]<<8) | (v[i*3]<<16);
-       }
-   }
-
-   if (mode == 1) {
-       uint16_t *d = kinect->getDepth();
-       for (int i = 0; i < 640*480; i++) {
-           unsigned char c = d[i]*255/5000;
-           if (c) c = 255-c;
-           p[i] = c | (c<<8) | (c<<16);
-       }
-   }
-
-   // SDL_UnlockSurface(screen);
+    glEnd();
+    glutSwapBuffers();
 }
 
-int main(int argc, char* argv[])
+void keyPressed(unsigned char key, int x, int y)
 {
-
-    if (SDL_Init(SDL_INIT_VIDEO) > 0) {
-        throw "Could not initialize SDL.";
+    if (key == 27) {
+        exit(0);
     }
-    if (!(screen = SDL_SetVideoMode(RESX, RESY, BPP, SDL_HWSURFACE | SDL_FULLSCREEN*FULLSCREEN))) {
-        throw "Could not initialize video.";
+    if (key == 'q') {
+        mode = 0;
+        kinect->stopDepth();
+        kinect->startVideo();
     }
-    SDL_WM_SetCaption("ARMap SandBox", NULL);
+    if (key == 'w') {
+        mode = 1;
+        kinect->stopVideo();
+        kinect->startDepth();
+    }
+}
 
+void ReSizeGLScene(int width, int height)
+{
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, GLWIDTH, GLHEIGHT, 0, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void InitGL(int width, int height)
+{
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_TEXTURE_2D);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glShadeModel(GL_FLAT);
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    ReSizeGLScene(width, height);
+}
+
+int main(int argc, char **argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
+    glutInitWindowSize(GLWIDTH, GLHEIGHT);
+    glutInitWindowPosition(0, 0);
+    window = glutCreateWindow("ARMap SandBox");
+    glutDisplayFunc(&DrawGLScene);
+    glutIdleFunc(&DrawGLScene);
+    glutReshapeFunc(&ReSizeGLScene);
+    glutKeyboardFunc(&keyPressed);
+    InitGL(GLWIDTH, GLHEIGHT);
     kinect = new Kinect();
     kinect->startVideo();
-
-    SDL_Event event;
-    while (!quit) {
-        draw();
-        while(SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    quit = 1; break;
-                case SDL_KEYDOWN:
-                    switch(event.key.keysym.sym) {
-                        case SDLK_ESCAPE: quit = 1; break;
-                        case SDLK_q: mode = 0; kinect->stopDepth(); kinect->startVideo(); break;
-                        case SDLK_w: mode = 1; kinect->stopVideo(); kinect->startDepth(); break;
-                        default: break;
-                    }
-                    break;
-            }
-        }
-        SDL_Flip(screen);
-#ifdef FRAMESLEEP
-        SDL_Delay(FRAMESLEEP);
-#endif
-    }
-    SDL_Quit();
-    delete kinect;
+    glutMainLoop();
     return 0;
 }

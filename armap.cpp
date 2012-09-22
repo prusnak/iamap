@@ -19,7 +19,7 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <SDL_thread.h>
+#include <pthread.h>
 #include "armap.h"
 
 void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
@@ -34,7 +34,7 @@ void video_cb(freenect_device *dev, void *video, uint32_t timestamp)
     b[640*480*3] = 1; // dirty flag
 }
 
-int thread_func(void *arg)
+void *thread_func(void *arg)
 {
     Kinect *kinect = (Kinect *)arg;
     while (!kinect->die && freenect_process_events(kinect->f_ctx) >= 0);
@@ -65,7 +65,8 @@ Kinect::Kinect(int index)
     die = false;
     running_video = false;
     running_depth = false;
-    SDL_CreateThread(thread_func, this);
+    pthread_t p;
+    pthread_create(&p, NULL, thread_func, this);
 }
 
 Kinect::~Kinect()

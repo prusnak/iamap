@@ -1,8 +1,8 @@
 CXX=g++
-CFLAGS=$(shell pkg-config --cflags libfreenect sdl) -Wall
+CFLAGS=$(shell pkg-config --cflags libfreenect) -Wall
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-pthread
-LIBS=$(shell pkg-config --libs libfreenect sdl)
+LIBS=$(shell pkg-config --libs libfreenect) -lGL -lglut
 OBJ=armap.o sandbox.o
 
 all: sandbox
