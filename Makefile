@@ -1,13 +1,17 @@
-NAME=sandbox
-CC=gcc
-CFLAGS=$(shell pkg-config libfreenect sdl --cflags) -Wall
-LDFLAGS=
-LIBS=$(shell pkg-config libfreenect sdl --libs) -lm
+CXX=g++
+CFLAGS=$(shell pkg-config --cflags libfreenect sdl) -Wall
+CXXFLAGS=$(CFLAGS)
+LDFLAGS=-pthread
+LIBS=$(shell pkg-config --libs libfreenect sdl)
+OBJ=armap.o sandbox.o
 
-all: $(NAME)
+all: sandbox
 
-$(NAME): $(NAME).c
-	$(CC) $(NAME).c -o $(NAME) $(CFLAGS) $(LDFLAGS) $(LIBS)
+sandbox: $(OBJ)
+	$(CXX) $(LDFLAGS) $(LIBS) $(OBJ) -o $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(NAME)
+	rm -f sandbox $(OBJ)
