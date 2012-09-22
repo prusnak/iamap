@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     SDL_WM_SetCaption("ARMap SandBox", NULL);
 
     kinect = new Kinect();
-    kinect->loop();
+    kinect->startVideo();
 
     SDL_Event event;
     while (!quit) {
@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
                 case SDL_KEYDOWN:
                     switch(event.key.keysym.sym) {
                         case SDLK_ESCAPE: quit = 1; break;
-                        case SDLK_q: mode = 0; break;
-                        case SDLK_w: mode = 1; break;
+                        case SDLK_q: mode = 0; kinect->stopDepth(); kinect->startVideo(); break;
+                        case SDLK_w: mode = 1; kinect->stopVideo(); kinect->startDepth(); break;
                         default: break;
                     }
                     break;

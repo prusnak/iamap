@@ -61,14 +61,10 @@ Kinect::Kinect(int index)
     freenect_set_depth_mode(f_dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_REGISTERED));
     freenect_set_video_buffer(f_dev, buffer_video_int);
     freenect_set_depth_buffer(f_dev, buffer_depth_int);
-    freenect_start_depth(f_dev);
-    freenect_start_video(f_dev);
     // freenect_set_led(f_dev, LED_RED);
-}
-
-void Kinect::loop()
-{
     die = false;
+    running_video = false;
+    running_depth = false;
     SDL_CreateThread(thread_func, this);
 }
 
@@ -76,8 +72,8 @@ Kinect::~Kinect()
 {
     die = true;
     // freenect_set_led(f_dev, LED_OFF);
-    freenect_stop_depth(f_dev);
-    freenect_stop_video(f_dev);
+    stopDepth();
+    stopVideo();
     free(buffer_video_int);
     free(buffer_depth_int);
     free(buffer_video);
@@ -102,4 +98,32 @@ uint8_t *Kinect::getVideo()
         buffer_video_int[640*480*3] = 0;
     }
     return buffer_video;
+}
+
+void Kinect::startVideo()
+{
+    if (!running_video) {
+        freenect_start_video(f_dev);
+    }
+}
+
+void Kinect::startDepth()
+{
+    if (!running_depth) {
+        freenect_start_depth(f_dev);
+    }
+}
+
+void Kinect::stopVideo()
+{
+    if (running_video) {
+        freenect_stop_video(f_dev);
+    }
+}
+
+void Kinect::stopDepth()
+{
+    if (running_depth) {
+        freenect_stop_depth(f_dev);
+    }
 }

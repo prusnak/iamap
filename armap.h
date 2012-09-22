@@ -23,9 +23,12 @@ class Kinect {
     public:
         Kinect(int index = 0);
         ~Kinect();
-        void loop();
         uint16_t *getDepth();
         uint8_t *getVideo();
+        void startVideo();
+        void startDepth();
+        void stopVideo();
+        void stopDepth();
     // public because of callback
         volatile bool die;
         freenect_context *f_ctx;
@@ -33,4 +36,6 @@ class Kinect {
         freenect_device *f_dev;
         uint8_t *buffer_video, *buffer_video_int;
         uint16_t *buffer_depth, *buffer_depth_int;
+        bool running_video;
+        bool running_depth;
 };
