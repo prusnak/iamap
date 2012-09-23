@@ -17,6 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <pthread.h>
@@ -41,16 +42,27 @@ void *thread_func(void *arg)
     return 0;
 }
 
-Kinect::Kinect(int index)
+Kinect *Kinect::create(int index)
 {
+    freenect_context *f_ctx;
+    freenect_device *f_dev;
     if (freenect_init(&f_ctx, NULL) < 0) {
-        throw "Could not init Freenect";
+        fprintf(stderr, "Could not init Freenect.\n");
+        return 0;
     }
     freenect_select_subdevices(f_ctx, (freenect_device_flags)FREENECT_DEVICE_CAMERA);
     if (freenect_open_device(f_ctx, &f_dev, index) < 0) {
         freenect_shutdown(f_ctx);
-        throw "Could not find Kinect";
+        fprintf(stderr, "Could not find Kinect.\n");
+        return 0;
     }
+    return new Kinect(f_ctx, f_dev);
+}
+
+Kinect::Kinect(freenect_context *f_ctx, freenect_device *f_dev)
+{
+    this->f_ctx = f_ctx;
+    this->f_dev = f_dev;
     buffer_video_int = (uint8_t *)malloc(640*480*3+1);
     buffer_depth_int = (uint16_t *)malloc(640*480*2+1);
     buffer_video = (uint8_t *)malloc(640*480*3);

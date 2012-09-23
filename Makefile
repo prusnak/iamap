@@ -1,5 +1,5 @@
 CXX=g++
-CFLAGS=$(shell pkg-config --cflags libfreenect) -Wall
+CFLAGS=$(shell pkg-config --cflags libfreenect) -Wall -fno-exceptions
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-pthread
 LIBS=$(shell pkg-config --libs libfreenect) -lGL -lglut

@@ -123,6 +123,8 @@ void GLInit(int width, int height)
 
 int main(int argc, char **argv)
 {
+    kinect = Kinect::create();
+    if (!kinect) return 1;
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
     glutInitWindowSize(GLWIDTH, GLHEIGHT);
@@ -135,7 +137,6 @@ int main(int argc, char **argv)
     glutMouseFunc(&GLMouse);
     glutMotionFunc(&GLMotion);
     GLInit(GLWIDTH, GLHEIGHT);
-    kinect = new Kinect();
     kinect->startVideo();
     glutMainLoop();
     delete kinect;
