@@ -36,8 +36,23 @@ GLuint tex, window;
 int mode = 0; // 0 - video, 1 - depth
 uint8_t depth8[640*480];
 
+struct vec {
+    GLfloat x, y, z;
+} mov = {0, 0, 600}, rot = {0, 0, 0};
+
+int mousebutton = -1;
+int mousestart[2] = {0, 0};
+
 void GLDisplay()
 {
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    glTranslatef(0.0, 0.0, -mov.z);
+    glRotatef(rot.y, 1.0, 0.0, 0.0);
+    glTranslatef(mov.x, -mov.y, 0.0);
+    glRotatef(rot.x, 0.0, 1.0, 0.0);
+
     glBindTexture(GL_TEXTURE_2D, tex);
     if (mode == 0) {
         glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
@@ -51,14 +66,15 @@ void GLDisplay()
         }
         glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
     }
-    glBegin(GL_TRIANGLE_FAN);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
-    glTexCoord2f(1, 0); glVertex3f(GLWIDTH, 0, 0);
-    glTexCoord2f(1, 1); glVertex3f(GLWIDTH, GLHEIGHT, 0);
-    glTexCoord2f(0, 1); glVertex3f(0, GLHEIGHT, 0);
 
+    glBegin(GL_TRIANGLE_FAN);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        glTexCoord2f(0, 0); glVertex3f(-GLWIDTH/2, GLHEIGHT/2, 0);
+        glTexCoord2f(1, 0); glVertex3f(GLWIDTH/2, GLHEIGHT/2, 0);
+        glTexCoord2f(1, 1); glVertex3f(GLWIDTH/2, -GLHEIGHT/2, 0);
+        glTexCoord2f(0, 1); glVertex3f(-GLWIDTH/2, -GLHEIGHT/2, 0);
     glEnd();
+
     glutSwapBuffers();
 }
 
@@ -84,20 +100,58 @@ void GLKeyboard(unsigned char key, int x, int y)
 void GLMouse(int button, int state, int x, int y)
 {
     printf("mouse: %d %d %d %d\n", button, state, x, y);
+    if (!state) {
+        switch (button) {
+            case 0:
+            case 1:
+            case 2:
+                mousebutton = button;
+                mousestart[0] = x;
+                mousestart[1] = y;
+                break;
+            case 3:
+                mov.z += 10;
+                break;
+            case 4:
+                mov.z -= 10;
+                break;
+        }
+    } else {
+        switch (button) {
+            case 1:
+                break;
+            case 2:
+                break;
+        }
+        mousebutton = -1;
+        mousestart[0] = 0;
+        mousestart[1] = 0;
+    }
+//    printf("mov: %f %f %f\n", mov.x, mov.y, mov.z);
+//    printf("rot: %f %f %f\n", rot.x, rot.y, rot.z);
 }
 
 
 void GLMotion(int x, int y)
 {
-    printf("motion: %d %d\n", x, y);
+    if (mousebutton == 0) {
+        rot.x = (x-mousestart[0]);
+        rot.y = (y-mousestart[1]);
+    }
+    if (mousebutton == 2) {
+        mov.x = (x-mousestart[0]);
+        mov.y = (y-mousestart[1]);
+    }
+    printf("motion: %d %d %d\n", mousebutton, x, y);
 }
 
 void GLReshape(int width, int height)
 {
+    if (!height) height = 1;
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, GLWIDTH, GLHEIGHT, 0, -1.0f, 1.0f);
+    gluPerspective(45.0, float(width)/height, 0.1, 5000.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -118,6 +172,8 @@ void GLInit(int width, int height)
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     GLReshape(width, height);
 }
 
