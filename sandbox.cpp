@@ -112,10 +112,10 @@ void GLMouse(int button, int state, int x, int y)
                 memcpy(&rotstart, &rot, sizeof(rot));
                 break;
             case 3:
-                mov.z += 10;
+                mov.z -= 10;
                 break;
             case 4:
-                mov.z -= 10;
+                mov.z += 10;
                 break;
         }
     } else {
