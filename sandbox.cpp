@@ -27,6 +27,7 @@
 #include <GL/glu.h>
 #endif
 #include <cstdio>
+#include <cstring>
 #include "armap.h"
 
 const int GLWIDTH = 640;
@@ -38,7 +39,7 @@ uint8_t depth8[640*480];
 
 struct vec {
     GLfloat x, y, z;
-} mov = {0, 0, 600}, rot = {0, 0, 0};
+} mov = {0, 0, 600}, rot = {0, 0, 0}, movstart, rotstart;
 
 int mousebutton = -1;
 int mousestart[2] = {0, 0};
@@ -99,7 +100,6 @@ void GLKeyboard(unsigned char key, int x, int y)
 
 void GLMouse(int button, int state, int x, int y)
 {
-    printf("mouse: %d %d %d %d\n", button, state, x, y);
     if (!state) {
         switch (button) {
             case 0:
@@ -108,6 +108,8 @@ void GLMouse(int button, int state, int x, int y)
                 mousebutton = button;
                 mousestart[0] = x;
                 mousestart[1] = y;
+                memcpy(&movstart, &mov, sizeof(mov));
+                memcpy(&rotstart, &rot, sizeof(rot));
                 break;
             case 3:
                 mov.z += 10;
@@ -127,22 +129,18 @@ void GLMouse(int button, int state, int x, int y)
         mousestart[0] = 0;
         mousestart[1] = 0;
     }
-//    printf("mov: %f %f %f\n", mov.x, mov.y, mov.z);
-//    printf("rot: %f %f %f\n", rot.x, rot.y, rot.z);
 }
-
 
 void GLMotion(int x, int y)
 {
     if (mousebutton == 0) {
-        rot.x = (x-mousestart[0]);
-        rot.y = (y-mousestart[1]);
+        rot.x = rotstart.x + (x-mousestart[0]) * 0.1;
+        rot.y = rotstart.y + (y-mousestart[1]) * 0.1;
     }
     if (mousebutton == 2) {
-        mov.x = (x-mousestart[0]);
-        mov.y = (y-mousestart[1]);
+        mov.x = movstart.x + (x-mousestart[0]) * 0.2;
+        mov.y = movstart.y + (y-mousestart[1]) * 0.2;
     }
-    printf("motion: %d %d %d\n", mousebutton, x, y);
 }
 
 void GLReshape(int width, int height)
