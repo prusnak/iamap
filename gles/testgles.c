@@ -20,77 +20,71 @@ void quit(int rc)
 }
 
 float view_rot = 0.0;
-int u_matrix = -1;
+int u_matRotate = -1, u_matScale = -1, u_matMove = -1;
 int attr_pos = 0, attr_color = 1;
 
-void make_z_rot_matrix(GLfloat angle, GLfloat *m)
+void make_matrixMove(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
 {
-    float c = cos(angle * M_PI / 180.0);
-    float s = sin(angle * M_PI / 180.0);
     int i;
     for (i = 0; i < 16; i++) {
         m[i] = 0.0;
     }
     m[0] = m[5] = m[10] = m[15] = 1.0;
+    m[3] = x;
+    m[7] = y;
+    m[11] = z;
+}
 
+void make_matrixRotate(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
+{
+    int i;
+    float c = cos(z * M_PI / 180.0);
+    float s = sin(z * M_PI / 180.0);
+    for (i = 0; i < 16; i++) {
+        m[i] = 0.0;
+    }
+    m[0] = m[5] = m[10] = m[15] = 1.0;
     m[0] = c;
     m[1] = s;
     m[4] = -s;
     m[5] = c;
 }
 
-void make_scale_matrix(GLfloat xs, GLfloat ys, GLfloat zs, GLfloat *m)
+void make_matrixScale(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
 {
     int i;
     for (i = 0; i < 16; i++) {
         m[i] = 0.0;
     }
-    m[0] = xs;
-    m[5] = ys;
-    m[10] = zs;
+    m[0] = x;
+    m[5] = y;
+    m[10] = z;
     m[15] = 1.0;
-}
-
-
-void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b)
-{
-#define A(row,col)  a[(col<<2)+row]
-#define B(row,col)  b[(col<<2)+row]
-#define P(row,col)  p[(col<<2)+row]
-    GLfloat p[16];
-    GLint i;
-    for (i = 0; i < 4; i++) {
-        const GLfloat ai0=A(i,0),  ai1=A(i,1),  ai2=A(i,2),  ai3=A(i,3);
-        P(i,0) = ai0 * B(0,0) + ai1 * B(1,0) + ai2 * B(2,0) + ai3 * B(3,0);
-        P(i,1) = ai0 * B(0,1) + ai1 * B(1,1) + ai2 * B(2,1) + ai3 * B(3,1);
-        P(i,2) = ai0 * B(0,2) + ai1 * B(1,2) + ai2 * B(2,2) + ai3 * B(3,2);
-        P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
-    }
-    memcpy(prod, p, sizeof(p));
-#undef A
-#undef B
-#undef PROD
 }
 
 void GLdraw()
 {
-    static const GLfloat verts[3][2] = {
-        { -1, -1 },
-        {  1, -1 },
-        {  0,  1 }
+    static const GLfloat verts[4][2] = {
+        { -GLWIDTH/2,  GLHEIGHT/2 },
+        {  GLWIDTH/2,  GLHEIGHT/2 },
+        {  GLWIDTH/2, -GLHEIGHT/2 },
+        { -GLWIDTH/2, -GLHEIGHT/2 }
     };
-    static const GLfloat colors[3][3] = {
+    static const GLfloat colors[4][3] = {
         { 1, 0, 0 },
         { 0, 1, 0 },
-        { 0, 0, 1 }
+        { 0, 0, 1 },
+        { 1, 1, 1 }
     };
-    GLfloat mat[16], rot[16], scale[16];
+    GLfloat matMove[16], matRotate[16], matScale[16];
 
-    /* Set modelview/projection matrix */
-    make_z_rot_matrix(view_rot, rot);
-    make_scale_matrix(0.5, 0.5, 0.5, scale);
-    mul_matrix(mat, rot, scale);
-    glUniformMatrix4fv(u_matrix, 1, GL_FALSE, mat);
+    make_matrixMove(0.0, 0.0, 0.0, matMove);
+    make_matrixRotate(0.0, 0.0, view_rot, matRotate);
+    make_matrixScale(0.003, 0.003, 0.003, matScale);
+
+    glUniformMatrix4fv(u_matMove, 1, GL_FALSE, matMove);
+    glUniformMatrix4fv(u_matRotate, 1, GL_FALSE, matRotate);
+    glUniformMatrix4fv(u_matScale, 1, GL_FALSE, matScale);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -99,7 +93,7 @@ void GLdraw()
     glEnableVertexAttribArray(attr_pos);
     glEnableVertexAttribArray(attr_color);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     glDisableVertexAttribArray(attr_pos);
     glDisableVertexAttribArray(attr_color);
@@ -123,12 +117,14 @@ void main() { \
 ";
 
     const char *vertShaderText = " \
-uniform mat4 modelviewProjection; \
+uniform mat4 matMove; \
+uniform mat4 matRotate; \
+uniform mat4 matScale; \
 attribute vec4 pos; \
 attribute vec4 color; \
 varying vec4 v_color; \
 void main() { \
-   gl_Position = modelviewProjection * pos; \
+   gl_Position = matMove * matRotate * matScale * pos; \
    v_color = color; \
 } \
 ";
@@ -136,7 +132,7 @@ void main() { \
     GLuint fragShader, vertShader, program;
     GLint stat;
 
-    glClearColor(0.4, 0.4, 0.4, 0.0);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
 
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragShader, 1, (const char **) &fragShaderText, NULL);
@@ -170,7 +166,9 @@ void main() { \
     glUseProgram(program);
     attr_pos = glGetAttribLocation(program, "pos");
     attr_color = glGetAttribLocation(program, "color");
-    u_matrix = glGetUniformLocation(program, "modelviewProjection");
+    u_matMove = glGetUniformLocation(program, "matMove");
+    u_matRotate = glGetUniformLocation(program, "matRotate");
+    u_matScale = glGetUniformLocation(program, "matScale");
 }
 
 
