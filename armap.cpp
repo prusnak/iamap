@@ -24,22 +24,22 @@
 #include <pthread.h>
 #include "armap.h"
 
-void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
+void Kinect::depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 {
     uint16_t *b = (uint16_t *)depth;
     b[640*480] = 1; // dirty flag
 }
 
-void video_cb(freenect_device *dev, void *video, uint32_t timestamp)
+void Kinect::video_cb(freenect_device *dev, void *video, uint32_t timestamp)
 {
     uint8_t *b = (uint8_t *)video;
     b[640*480*3] = 1; // dirty flag
 }
 
-void *thread_func(void *arg)
+void *Kinect::thread_func(void *arg)
 {
     Kinect *kinect = (Kinect *)arg;
-    while (!kinect->die && freenect_process_events(kinect->f_ctx) >= 0) ;
+    while (!kinect->die && freenect_process_events(kinect->f_ctx) >= 0) {}
     return 0;
 }
 
@@ -92,12 +92,14 @@ Kinect::Kinect(freenect_context *f_ctx, freenect_device *f_dev)
         for (int y = 0; y < 480; y++) {
             for (int x = 0; x < 640; x++) {
                 int i = x+y*640;
-                buffer_video[i*3  ] = (sin(((x-240)*(x-240)+(y-120)*(y-120))/10000.0))*127.0+128.0;
-                buffer_video[i*3+1] = (sin(((x-400)*(x-400)+(y-120)*(y-120))/10000.0))*127.0+128.0;
-                buffer_video[i*3+2] = (sin(((x-320)*(x-320)+(y-360)*(y-360))/10000.0))*127.0+128.0;
-                buffer_depth[i    ] = (sin(((x-320)*(x-320)+(y-240)*(y-240))/10000.0))*2000.0+2500.0;
+                buffer_video_int[i*3  ] = (sin(((x-240)*(x-240)+(y-120)*(y-120))/10000.0))*127.0+128.0;
+                buffer_video_int[i*3+1] = (sin(((x-400)*(x-400)+(y-120)*(y-120))/10000.0))*127.0+128.0;
+                buffer_video_int[i*3+2] = (sin(((x-320)*(x-320)+(y-360)*(y-360))/10000.0))*127.0+128.0;
+                buffer_depth_int[i    ] = (sin(((x-320)*(x-320)+(y-240)*(y-240))/10000.0))*2000.0+2500.0;
             }
         }
+        buffer_depth_int[640*480] = 1; // dirty flag
+        buffer_video_int[640*480*3] = 1; // dirty flag
     }
 }
 

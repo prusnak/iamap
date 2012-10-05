@@ -30,17 +30,17 @@ class Kinect {
         void startDepth();
         void stopVideo();
         void stopDepth();
-    // public because of callback
-        volatile bool die;
-        freenect_context *f_ctx;
-        uint8_t *buffer_video_int;
-        uint16_t *buffer_depth_int;
     private:
         Kinect(freenect_context *f_ctx, freenect_device *f_dev); // use create method instead
         freenect_device *f_dev;
+        freenect_context *f_ctx;
+        volatile bool die;
         uint8_t *buffer_video, *buffer_video_int;
         uint16_t *buffer_depth, *buffer_depth_int;
         bool running_video;
         bool running_depth;
         bool fake;
+        static void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp);
+        static void video_cb(freenect_device *dev, void *video, uint32_t timestamp);
+        static void *thread_func(void *arg);
 };
