@@ -22,6 +22,7 @@
 class Kinect {
     public:
         static Kinect *create(int index = 0);
+        static Kinect *createFake();
         ~Kinect();
         uint16_t *getDepth();
         uint8_t *getVideo();
@@ -32,6 +33,8 @@ class Kinect {
     // public because of callback
         volatile bool die;
         freenect_context *f_ctx;
+        uint8_t *buffer_video_int;
+        uint16_t *buffer_depth_int;
     private:
         Kinect(freenect_context *f_ctx, freenect_device *f_dev); // use create method instead
         freenect_device *f_dev;
@@ -39,4 +42,5 @@ class Kinect {
         uint16_t *buffer_depth, *buffer_depth_int;
         bool running_video;
         bool running_depth;
+        bool fake;
 };

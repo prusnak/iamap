@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    window = SDL_CreateWindow("ARMap SandBox", 100, 100, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("ARMap Sandbox", 100, 100, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL);
 
     context = SDL_GL_CreateContext(window);
     if (!context) {

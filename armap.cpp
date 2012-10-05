@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <pthread.h>
 #include "armap.h"
 
@@ -38,7 +39,7 @@ void video_cb(freenect_device *dev, void *video, uint32_t timestamp)
 void *thread_func(void *arg)
 {
     Kinect *kinect = (Kinect *)arg;
-    while (!kinect->die && freenect_process_events(kinect->f_ctx) >= 0);
+    while (!kinect->die && freenect_process_events(kinect->f_ctx) >= 0) ;
     return 0;
 }
 
@@ -59,6 +60,11 @@ Kinect *Kinect::create(int index)
     return new Kinect(f_ctx, f_dev);
 }
 
+Kinect *Kinect::createFake()
+{
+    return new Kinect(0, 0);
+}
+
 Kinect::Kinect(freenect_context *f_ctx, freenect_device *f_dev)
 {
     this->f_ctx = f_ctx;
@@ -67,18 +73,32 @@ Kinect::Kinect(freenect_context *f_ctx, freenect_device *f_dev)
     buffer_depth_int = (uint16_t *)malloc(640*480*2+1);
     buffer_video = (uint8_t *)malloc(640*480*3);
     buffer_depth = (uint16_t *)malloc(640*480*2);
-    freenect_set_depth_callback(f_dev, depth_cb);
-    freenect_set_video_callback(f_dev, video_cb);
-    freenect_set_video_mode(f_dev, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB));
-    freenect_set_depth_mode(f_dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_REGISTERED));
-    freenect_set_video_buffer(f_dev, buffer_video_int);
-    freenect_set_depth_buffer(f_dev, buffer_depth_int);
+    if (f_dev) {
+        freenect_set_depth_callback(f_dev, depth_cb);
+        freenect_set_video_callback(f_dev, video_cb);
+        freenect_set_video_mode(f_dev, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB));
+        freenect_set_depth_mode(f_dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_REGISTERED));
+        freenect_set_video_buffer(f_dev, buffer_video_int);
+        freenect_set_depth_buffer(f_dev, buffer_depth_int);
+    }
     // freenect_set_led(f_dev, LED_RED);
     die = false;
     running_video = false;
     running_depth = false;
-    pthread_t p;
-    pthread_create(&p, NULL, thread_func, this);
+    if (f_ctx && f_dev) {
+        pthread_t p;
+        pthread_create(&p, NULL, thread_func, this);
+    } else {
+        for (int y = 0; y < 480; y++) {
+            for (int x = 0; x < 640; x++) {
+                int i = x+y*640;
+                buffer_video[i*3  ] = (sin(((x-240)*(x-240)+(y-120)*(y-120))/10000.0))*127.0+128.0;
+                buffer_video[i*3+1] = (sin(((x-400)*(x-400)+(y-120)*(y-120))/10000.0))*127.0+128.0;
+                buffer_video[i*3+2] = (sin(((x-320)*(x-320)+(y-360)*(y-360))/10000.0))*127.0+128.0;
+                buffer_depth[i    ] = (sin(((x-320)*(x-320)+(y-240)*(y-240))/10000.0))*2000.0+2500.0;
+            }
+        }
+    }
 }
 
 Kinect::~Kinect()
@@ -91,8 +111,12 @@ Kinect::~Kinect()
     free(buffer_depth_int);
     free(buffer_video);
     free(buffer_depth);
-    freenect_close_device(f_dev);
-    freenect_shutdown(f_ctx);
+    if (f_dev) {
+        freenect_close_device(f_dev);
+    }
+    if (f_ctx) {
+        freenect_shutdown(f_ctx);
+    }
 }
 
 uint16_t *Kinect::getDepth()
@@ -115,28 +139,28 @@ uint8_t *Kinect::getVideo()
 
 void Kinect::startVideo()
 {
-    if (!running_video) {
+    if (!running_video && f_dev) {
         freenect_start_video(f_dev);
     }
 }
 
 void Kinect::startDepth()
 {
-    if (!running_depth) {
+    if (!running_depth && f_dev) {
         freenect_start_depth(f_dev);
     }
 }
 
 void Kinect::stopVideo()
 {
-    if (running_video) {
+    if (running_video && f_dev) {
         freenect_stop_video(f_dev);
     }
 }
 
 void Kinect::stopDepth()
 {
-    if (running_depth) {
+    if (running_depth && f_dev) {
         freenect_stop_depth(f_dev);
     }
 }
