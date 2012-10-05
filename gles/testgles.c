@@ -8,9 +8,14 @@
 
 #define GLWIDTH  640
 #define GLHEIGHT 480
+#define GLASPECT 1.33333333333333333333
 
 SDL_Window *window = NULL;
 SDL_GLContext context = NULL;
+
+struct vec {
+    GLfloat x, y, z;
+} mov = {0, 0, 250}, rot = {0, 0, 0}, movstart, rotstart;
 
 void quit(int rc)
 {
@@ -20,47 +25,8 @@ void quit(int rc)
 }
 
 float view_rot = 0.0;
-int u_matRotate = -1, u_matScale = -1, u_matMove = -1;
+int u_matRotate = -1, u_matPerspective = -1, u_matMove = -1;
 int attr_pos = 0, attr_color = 1;
-
-void make_matrixMove(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
-{
-    int i;
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
-    }
-    m[0] = m[5] = m[10] = m[15] = 1.0;
-    m[3] = x;
-    m[7] = y;
-    m[11] = z;
-}
-
-void make_matrixRotate(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
-{
-    int i;
-    float c = cos(z * M_PI / 180.0);
-    float s = sin(z * M_PI / 180.0);
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
-    }
-    m[0] = m[5] = m[10] = m[15] = 1.0;
-    m[0] = c;
-    m[1] = s;
-    m[4] = -s;
-    m[5] = c;
-}
-
-void make_matrixScale(GLfloat x, GLfloat y, GLfloat z, GLfloat *m)
-{
-    int i;
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
-    }
-    m[0] = x;
-    m[5] = y;
-    m[10] = z;
-    m[15] = 1.0;
-}
 
 void GLdraw()
 {
@@ -76,15 +42,26 @@ void GLdraw()
         { 0, 0, 1 },
         { 1, 1, 1 }
     };
-    GLfloat matMove[16], matRotate[16], matScale[16];
+    static const float fov = 1.0; // ctg(45.0 deg)
+    static const float aspect = GLASPECT;
+    static const float zNear = 0.1;
+    static const float zFar = 5000.0;
+    GLfloat matPerspective[16] = { fov/aspect,   0,                         0,                           0,
+                                            0, fov,                         0,                           0,
+                                            0,   0, (zFar+zNear)/(zNear-zFar), 2*(zFar*zNear)/(zNear-zFar),
+                                            0,   0,                        -1,                           0 };
+    GLfloat matMove[16] = { 1, 0, 0, mov.x,
+                            0, 1, 0, -mov.y,
+                            0, 0, 1, -mov.z,
+                            0, 0, 0,     1 };
+    GLfloat matRotate[16] = { 1, 0, 0, 0,
+                              0, 1, 0, 0,
+                              0, 0, 1, 0,
+                              0, 0, 0, 1 };
 
-    make_matrixMove(0.0, 0.0, 0.0, matMove);
-    make_matrixRotate(0.0, 0.0, view_rot, matRotate);
-    make_matrixScale(0.003, 0.003, 0.003, matScale);
-
+    glUniformMatrix4fv(u_matPerspective, 1, GL_FALSE, matPerspective);
     glUniformMatrix4fv(u_matMove, 1, GL_FALSE, matMove);
     glUniformMatrix4fv(u_matRotate, 1, GL_FALSE, matRotate);
-    glUniformMatrix4fv(u_matScale, 1, GL_FALSE, matScale);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -119,12 +96,12 @@ void main() { \
     const char *vertShaderText = " \
 uniform mat4 matMove; \
 uniform mat4 matRotate; \
-uniform mat4 matScale; \
+uniform mat4 matPerspective; \
 attribute vec4 pos; \
 attribute vec4 color; \
 varying vec4 v_color; \
 void main() { \
-   gl_Position = matMove * matRotate * matScale * pos; \
+   gl_Position = matMove * matPerspective * pos; \
    v_color = color; \
 } \
 ";
@@ -168,7 +145,7 @@ void main() { \
     attr_color = glGetAttribLocation(program, "color");
     u_matMove = glGetUniformLocation(program, "matMove");
     u_matRotate = glGetUniformLocation(program, "matRotate");
-    u_matScale = glGetUniformLocation(program, "matScale");
+    u_matPerspective = glGetUniformLocation(program, "matPerspective");
 }
 
 
