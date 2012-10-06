@@ -1,59 +1,75 @@
-/*
-    ARMap SandBox - Augmented Reality Sandbox Toy
-    Copyright (c) 2010 OpenKinect Project
-    Copyright (c) 2012 Pavol Rusnak
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+#include <SDL.h>
+#include <SDL_opengles2.h>
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#if defined(__APPLE__)
-#include <GLUT/glut.h>
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
-#include <cstdio>
-#include <cstring>
 #include "armap.h"
+#include "Matrix.hpp"
 
-const int GLWIDTH = 640;
-const int GLHEIGHT = 480;
+#define GLWIDTH  640
+#define GLHEIGHT 480
+
+SDL_Window *window = NULL;
+SDL_GLContext context = NULL;
+
 Kinect *kinect;
-GLuint tex, window;
-int mode = 0; // 0 - video, 1 - depth
+GLuint tex;
+
+int mode = 0;
+int mousebutton = 0;
+int mousestart[2] = {0, 0};
+
 uint8_t depth8[640*480];
 
 struct vec {
     GLfloat x, y, z;
 } mov = {0, 0, 600}, rot = {0, 0, 0}, movstart, rotstart;
 
-int mousebutton = -1;
-int mousestart[2] = {0, 0};
-
-void GLDisplay()
+void quit(int rc)
 {
+    if (context) SDL_GL_DeleteContext(context);
+    if (window) SDL_DestroyWindow(window);
+    exit(rc);
+}
+
+float view_rot = 0.0;
+int u_Projection = -1, u_ModelView = -1;
+int attr_pos = 0, attr_texcoord = 1;
+
+void GLdraw()
+{
+    static const GLfloat verts[4][2] = {
+        { -GLWIDTH/2,  GLHEIGHT/2 },
+        {  GLWIDTH/2,  GLHEIGHT/2 },
+        {  GLWIDTH/2, -GLHEIGHT/2 },
+        { -GLWIDTH/2, -GLHEIGHT/2 }
+    };
+    static const GLfloat texcoords[4][2] = {
+        {0, 0},
+        {1, 0},
+        {1, 1},
+        {0, 1}
+    };
+
+    mat4 matProjection, matModelView;
+    const float fH = tan(45*M_PI/360) * 0.1;
+    const float fW = fH * GLWIDTH / GLHEIGHT;
+    matProjection = mat4().Frustum(-fW, fW, -fH, fH, 0.1, 5000.0);
+    glUniformMatrix4fv(u_Projection, 1, GL_FALSE, matProjection.Pointer());
+
+    matModelView =
+        mat4().Rotate(-rot.x, vec3(0.0, 1.0, 0.0)) *
+        mat4().Translate(mov.x, -mov.y, 0.0) *
+        mat4().Rotate(-rot.y, vec3(1.0, 0.0, 0.0)) *
+        mat4().Translate(0.0, 0.0, -mov.z);
+    glUniformMatrix4fv(u_ModelView, 1, GL_FALSE, matModelView.Pointer());
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    glTranslatef(0.0, 0.0, -mov.z);
-    glRotatef(rot.y, 1.0, 0.0, 0.0);
-    glTranslatef(mov.x, -mov.y, 0.0);
-    glRotatef(rot.x, 0.0, 1.0, 0.0);
 
+    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
     if (mode == 0) {
         glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
@@ -68,131 +84,201 @@ void GLDisplay()
         glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
     }
 
-    glBegin(GL_TRIANGLE_FAN);
-        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        glTexCoord2f(0, 0); glVertex3f(-GLWIDTH/2, GLHEIGHT/2, 0);
-        glTexCoord2f(1, 0); glVertex3f(GLWIDTH/2, GLHEIGHT/2, 0);
-        glTexCoord2f(1, 1); glVertex3f(GLWIDTH/2, -GLHEIGHT/2, 0);
-        glTexCoord2f(0, 1); glVertex3f(-GLWIDTH/2, -GLHEIGHT/2, 0);
-    glEnd();
+    glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
+    glVertexAttribPointer(attr_texcoord, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+    glEnableVertexAttribArray(attr_pos);
+    glEnableVertexAttribArray(attr_texcoord);
 
-    glutSwapBuffers();
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glDisableVertexAttribArray(attr_pos);
+    glDisableVertexAttribArray(attr_texcoord);
+
+    view_rot += 0.1;
 }
 
-void GLKeyboard(unsigned char key, int x, int y)
+void GLreshape(int width, int height)
 {
-    switch (key) {
-        case 27:
-            glutDestroyWindow(window);
-            return;
-        case 'q':
-            mode = 0;
-            kinect->stopDepth();
-            kinect->startVideo();
-            return;
-        case 'w':
-            mode = 1;
-            kinect->stopVideo();
-            kinect->startDepth();
-            return;
+    glViewport(0, 0, (GLint) width, (GLint) height);
+}
+
+
+void GLinit()
+{
+    const char *fragShaderText = " \
+varying vec2 v_texcoord; \
+uniform sampler2D tex; \
+void main() { \
+   gl_FragColor = texture2D(tex, v_texcoord); \
+} \
+";
+
+    const char *vertShaderText = " \
+uniform mat4 m_modelview; \
+uniform mat4 m_projection; \
+attribute vec4 pos; \
+attribute vec2 texcoord; \
+varying vec2 v_texcoord; \
+void main() { \
+   gl_Position = m_projection * m_modelview * pos; \
+   v_texcoord = texcoord; \
+} \
+";
+
+    GLuint fragShader, vertShader, program;
+    GLint stat;
+
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragShader, 1, (const char **) &fragShaderText, NULL);
+    glCompileShader(fragShader);
+    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &stat);
+    if (!stat) {
+       fprintf(stderr, "Error: fragment shader did not compile!\n");
+       exit(1);
     }
-}
 
-void GLMouse(int button, int state, int x, int y)
-{
-    if (!state) {
-        switch (button) {
-            case 0:
-            case 1:
-            case 2:
-                mousebutton = button;
-                mousestart[0] = x;
-                mousestart[1] = y;
-                memcpy(&movstart, &mov, sizeof(mov));
-                memcpy(&rotstart, &rot, sizeof(rot));
-                break;
-            case 3:
-                mov.z -= 10;
-                break;
-            case 4:
-                mov.z += 10;
-                break;
-        }
-    } else {
-        switch (button) {
-            case 1:
-                break;
-            case 2:
-                break;
-        }
-        mousebutton = -1;
-        mousestart[0] = 0;
-        mousestart[1] = 0;
+    vertShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertShader, 1, (const char **) &vertShaderText, NULL);
+    glCompileShader(vertShader);
+    glGetShaderiv(vertShader, GL_COMPILE_STATUS, &stat);
+    if (!stat) {
+       fprintf(stderr, "Error: vertex shader did not compile!\n");
+       exit(1);
     }
-}
 
-void GLMotion(int x, int y)
-{
-    if (mousebutton == 0) {
-        rot.x = rotstart.x + (x-mousestart[0]) * 0.1;
-        rot.y = rotstart.y + (y-mousestart[1]) * 0.1;
+    program = glCreateProgram();
+    glAttachShader(program, fragShader);
+    glAttachShader(program, vertShader);
+    glLinkProgram(program);
+
+    glGetProgramiv(program, GL_LINK_STATUS, &stat);
+    if (!stat) {
+       fprintf(stderr, "Error: shaders did not link!");
+       exit(1);
     }
-    if (mousebutton == 2) {
-        mov.x = movstart.x + (x-mousestart[0]) * 0.2;
-        mov.y = movstart.y + (y-mousestart[1]) * 0.2;
-    }
-}
 
-void GLReshape(int width, int height)
-{
-    if (!height) height = 1;
-    glViewport(0, 0, width, height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, float(width)/height, 0.1, 5000.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
+    glUseProgram(program);
+    attr_pos = glGetAttribLocation(program, "pos");
+    attr_texcoord = glGetAttribLocation(program, "texcoord");
+    u_Projection = glGetUniformLocation(program, "m_projection");
+    u_ModelView = glGetUniformLocation(program, "m_modelview");
 
-void GLInit(int width, int height)
-{
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0);
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_TEXTURE_2D);
-    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glShadeModel(GL_FLAT);
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    GLReshape(width, height);
 }
 
-int main(int argc, char **argv)
+
+int main(int argc, char *argv[])
 {
-    kinect = Kinect::createFake();
+    int done;
+    SDL_Event event;
+
+    kinect = Kinect::create();
     if (!kinect) return 1;
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-    glutInitWindowSize(GLWIDTH, GLHEIGHT);
-    glutInitWindowPosition(0, 0);
-    window = glutCreateWindow("ARMap Sandbox");
-    glutDisplayFunc(&GLDisplay);
-    glutIdleFunc(&GLDisplay);
-    glutReshapeFunc(&GLReshape);
-    glutKeyboardFunc(&GLKeyboard);
-    glutMouseFunc(&GLMouse);
-    glutMotionFunc(&GLMotion);
-    GLInit(GLWIDTH, GLHEIGHT);
+
+    if (SDL_VideoInit(0) < 0) {
+        fprintf(stderr, "Couldn't initialize video driver: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    window = SDL_CreateWindow("ARMap Sandbox", 100, 100, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL);
+
+    context = SDL_GL_CreateContext(window);
+    if (!context) {
+        fprintf(stderr, "SDL_GL_CreateContext(): %s\n", SDL_GetError());
+        quit(2);
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+    GLinit();
+    GLreshape(GLWIDTH, GLHEIGHT);
+
     kinect->startVideo();
-    glutMainLoop();
+
+    done = 0;
+    while (!done) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+
+                case SDL_WINDOWEVENT:
+                    switch (event.window.event) {
+                        case SDL_WINDOWEVENT_RESIZED:
+                            GLreshape(event.window.data1, event.window.data2);
+                            break;
+                        case SDL_WINDOWEVENT_CLOSE:
+                            done = 1;
+                            break;
+                    }
+                    break;
+
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            done = 1;
+                            break;
+                        case SDLK_q:
+                            kinect->stopDepth();
+                            kinect->startVideo();
+                            mode = 0;
+                            break;
+                        case SDLK_w:
+                            kinect->stopVideo();
+                            kinect->startDepth();
+                            mode = 1;
+                            break;
+                    }
+                    break;
+
+                case SDL_MOUSEMOTION:
+                    if (mousebutton == 1) {
+                        rot.x = rotstart.x + (event.motion.x-mousestart[0]) * 0.1;
+                        rot.y = rotstart.y + (event.motion.y-mousestart[1]) * 0.1;
+                    }
+                    if (mousebutton == 3) {
+                        mov.x = movstart.x + (event.motion.x-mousestart[0]) * 0.2;
+                        mov.y = movstart.y + (event.motion.y-mousestart[1]) * 0.2;
+                    }
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                    mousebutton = event.button.button;
+                    mousestart[0] = event.button.x;
+                    mousestart[1] = event.button.y;
+                    memcpy(&movstart, &mov, sizeof(mov));
+                    memcpy(&rotstart, &rot, sizeof(rot));
+                    break;
+
+                case SDL_MOUSEBUTTONUP:
+                    mousebutton = 0;
+                    mousestart[0] = 0;
+                    mousestart[1] = 0;
+                    break;
+
+                case SDL_MOUSEWHEEL:
+                    mov.z -= event.wheel.y*10;
+                    break;
+
+                case SDL_QUIT:
+                    done = 1;
+                    break;
+            }
+        }
+        GLdraw();
+        SDL_GL_SwapWindow(window);
+    }
+
     delete kinect;
+    quit(0);
     return 0;
 }
