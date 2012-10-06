@@ -6,16 +6,20 @@
 #include <SDL.h>
 #include <SDL_opengles2.h>
 
+#include "Matrix.hpp"
+
 #define GLWIDTH  640
 #define GLHEIGHT 480
-#define GLASPECT 1.33333333333333333333
 
 SDL_Window *window = NULL;
 SDL_GLContext context = NULL;
 
+int mousebutton = 0;
+int mousestart[2] = {0, 0};
+
 struct vec {
     GLfloat x, y, z;
-} mov = {0, 0, 250}, rot = {0, 0, 0}, movstart, rotstart;
+} mov = {0, 0, 600}, rot = {0, 0, 0}, movstart, rotstart;
 
 void quit(int rc)
 {
@@ -25,7 +29,7 @@ void quit(int rc)
 }
 
 float view_rot = 0.0;
-int u_matRotate = -1, u_matPerspective = -1, u_matMove = -1;
+int u_Projection = -1, u_ModelView = -1;
 int attr_pos = 0, attr_color = 1;
 
 void GLdraw()
@@ -42,26 +46,19 @@ void GLdraw()
         { 0, 0, 1 },
         { 1, 1, 1 }
     };
-    static const float fov = 1.0; // ctg(45.0 deg)
-    static const float aspect = GLASPECT;
-    static const float zNear = 0.1;
-    static const float zFar = 5000.0;
-    GLfloat matPerspective[16] = { fov/aspect,   0,                         0,                           0,
-                                            0, fov,                         0,                           0,
-                                            0,   0, (zFar+zNear)/(zNear-zFar), 2*(zFar*zNear)/(zNear-zFar),
-                                            0,   0,                        -1,                           0 };
-    GLfloat matMove[16] = { 1, 0, 0, mov.x,
-                            0, 1, 0, -mov.y,
-                            0, 0, 1, -mov.z,
-                            0, 0, 0,     1 };
-    GLfloat matRotate[16] = { 1, 0, 0, 0,
-                              0, 1, 0, 0,
-                              0, 0, 1, 0,
-                              0, 0, 0, 1 };
 
-    glUniformMatrix4fv(u_matPerspective, 1, GL_FALSE, matPerspective);
-    glUniformMatrix4fv(u_matMove, 1, GL_FALSE, matMove);
-    glUniformMatrix4fv(u_matRotate, 1, GL_FALSE, matRotate);
+    mat4 matProjection, matModelView;
+    const float fH = tan(45*M_PI/360) * 0.1;
+    const float fW = fH * GLWIDTH / GLHEIGHT;
+    matProjection = mat4().Frustum(-fW, fW, -fH, fH, 0.1, 5000.0);
+    glUniformMatrix4fv(u_Projection, 1, GL_FALSE, matProjection.Pointer());
+
+    matModelView =
+        mat4().Rotate(-rot.x, vec3(0.0, 1.0, 0.0)) *
+        mat4().Translate(mov.x, -mov.y, 0.0) *
+        mat4().Rotate(-rot.y, vec3(1.0, 0.0, 0.0)) *
+        mat4().Translate(0.0, 0.0, -mov.z);
+    glUniformMatrix4fv(u_ModelView, 1, GL_FALSE, matModelView.Pointer());
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -94,14 +91,14 @@ void main() { \
 ";
 
     const char *vertShaderText = " \
-uniform mat4 matMove; \
-uniform mat4 matRotate; \
-uniform mat4 matPerspective; \
+uniform mat4 ModelView; \
+uniform mat4 Projection; \
 attribute vec4 pos; \
 attribute vec4 color; \
 varying vec4 v_color; \
 void main() { \
-   gl_Position = matMove * matPerspective * pos; \
+   mat4 mvp = Projection * ModelView; \
+   gl_Position = mvp * pos; \
    v_color = color; \
 } \
 ";
@@ -143,9 +140,8 @@ void main() { \
     glUseProgram(program);
     attr_pos = glGetAttribLocation(program, "pos");
     attr_color = glGetAttribLocation(program, "color");
-    u_matMove = glGetUniformLocation(program, "matMove");
-    u_matRotate = glGetUniformLocation(program, "matRotate");
-    u_matPerspective = glGetUniformLocation(program, "matPerspective");
+    u_Projection = glGetUniformLocation(program, "Projection");
+    u_ModelView = glGetUniformLocation(program, "ModelView");
 }
 
 
@@ -180,6 +176,7 @@ int main(int argc, char *argv[])
     while (!done) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
+
                 case SDL_WINDOWEVENT:
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_RESIZED:
@@ -190,6 +187,7 @@ int main(int argc, char *argv[])
                             break;
                     }
                     break;
+
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                         case SDLK_ESCAPE:
@@ -197,6 +195,36 @@ int main(int argc, char *argv[])
                             break;
                     }
                     break;
+
+                case SDL_MOUSEMOTION:
+                    if (mousebutton == 1) {
+                        rot.x = rotstart.x + (event.motion.x-mousestart[0]) * 0.1;
+                        rot.y = rotstart.y + (event.motion.y-mousestart[1]) * 0.1;
+                    }
+                    if (mousebutton == 3) {
+                        mov.x = movstart.x + (event.motion.x-mousestart[0]) * 0.2;
+                        mov.y = movstart.y + (event.motion.y-mousestart[1]) * 0.2;
+                    }
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                    mousebutton = event.button.button;
+                    mousestart[0] = event.button.x;
+                    mousestart[1] = event.button.y;
+                    memcpy(&movstart, &mov, sizeof(mov));
+                    memcpy(&rotstart, &rot, sizeof(rot));
+                    break;
+
+                case SDL_MOUSEBUTTONUP:
+                    mousebutton = 0;
+                    mousestart[0] = 0;
+                    mousestart[1] = 0;
+                    break;
+
+                case SDL_MOUSEWHEEL:
+                    mov.z -= event.wheel.y*10;
+                    break;
+
                 case SDL_QUIT:
                     done = 1;
                     break;
