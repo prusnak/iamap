@@ -2,6 +2,3 @@ ARMap - Augmented Reality Mapping
 =================================
 
 Set of various games and toys that play with Augmented Reality Mapping.
-
-Required packages:
-  * Raspbian - freeglut3-dev libfreenect-dev libusb-1.0-0-dev
