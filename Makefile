@@ -15,7 +15,8 @@ OBJ=armap.o sandbox.o
 all: sandbox
 
 sandbox: $(OBJ)
-	$(CXX) $(LDFLAGS) $(LIBS) $(OBJ) -o $@
+	$(CXX) $(LDFLAGS) $(OBJ) $(LIBS) -o $@
+
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
