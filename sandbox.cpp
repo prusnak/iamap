@@ -5,6 +5,9 @@
 
 #include <SDL.h>
 #include <SDL_opengles2.h>
+#ifdef RPI
+#include <bcm_host.h>
+#endif
 
 #include "armap.h"
 #include "Matrix.hpp"
@@ -32,6 +35,9 @@ void quit(int rc)
 {
     if (context) SDL_GL_DeleteContext(context);
     if (window) SDL_DestroyWindow(window);
+#ifdef RPI
+    bcm_host_deinit();
+#endif
     exit(rc);
 }
 
@@ -181,6 +187,10 @@ int main(int argc, char *argv[])
 
     kinect = Kinect::create();
     if (!kinect) return 1;
+
+#ifdef RPI
+    bcm_host_init();
+#endif
 
     if (SDL_VideoInit(0) < 0) {
         fprintf(stderr, "Couldn't initialize video driver: %s\n", SDL_GetError());
