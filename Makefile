@@ -4,7 +4,7 @@ LDFLAGS=-pthread
 LIBS=$(shell pkg-config --libs libfreenect sdl2) -lm
 ifeq ($(RPI),1)
 CXXFLAGS+=-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -DRPI=1
-LDFLAGS+=-L/opt/vc/libs
+LDFLAGS+=-L/opt/vc/lib
 LIBS+=-lGLESv2
 else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
