@@ -26,10 +26,11 @@ int mousebutton = 0;
 int mousestart[2] = {0, 0};
 
 uint8_t depth8[640*480];
+uint8_t grid[640*480*3];
 
 struct vec {
     GLfloat x, y, z;
-} mov = {0, 0, 600}, rot = {0, 0, 0}, movstart, rotstart;
+} mov = {0, 0, 579}, rot = {0, 0, 0}, movstart, rotstart;
 
 void quit(int rc)
 {
@@ -78,17 +79,23 @@ void GLdraw()
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
-    if (mode == 0) {
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
-    }
-    if (mode == 1) {
-        uint16_t *d = kinect->getDepth();
-        for (int i = 0; i < 640*480; i++) {
-            unsigned char c = d[i]*255/5000;
-            if (c) c = 255 - c;
-            depth8[i] = c;
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
+    uint16_t *d;
+    switch (mode) {
+        case 0:
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
+            break;
+        case 1:
+            d = kinect->getDepth();
+            for (int i = 0; i < 640*480; i++) {
+                unsigned char c = d[i]*255/5000;
+                if (c) c = 255 - c;
+                depth8[i] = c;
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
+            break;
+        case 2:
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, grid);
+            break;
     }
 
     glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
@@ -186,7 +193,7 @@ int main(int argc, char *argv[])
     int done;
     SDL_Event event;
 
-    kinect = Kinect::createFake();
+    kinect = Kinect::create();
     if (!kinect) return 1;
 
 #ifdef RPI
@@ -197,13 +204,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Unable to initialize SDL:  %s\n", SDL_GetError());
         return 1;
     }
-/*
-    if (SDL_VideoInit(0) < 0) {
-        fprintf(stderr, "Couldn't initialize video driver: %s\n", SDL_GetError());
-        return 1;
-    }
-*/
-    window = SDL_CreateWindow("ARMap Sandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
+
+    window = SDL_CreateWindow("ARMap Sandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL); // | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS
 
     context = SDL_GL_CreateContext(window);
     if (!context) {
@@ -216,6 +218,29 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+    // initialize green grid
+    memset(grid, 0, sizeof(grid));
+    for (int i=0; i<640; i++) {
+        grid[(0*640+i)*3+1] = 255;
+        grid[(80*640+i)*3+1] = 255;
+        grid[(160*640+i)*3+1] = 255;
+        grid[(240*640+i)*3+1] = 255;
+        grid[(320*640+i)*3+1] = 255;
+        grid[(400*640+i)*3+1] = 255;
+        grid[(479*640+i)*3+1] = 255;
+    }
+    for (int i=0; i<480; i++) {
+        grid[(i*640+0)*3+1] = 255;
+        grid[(i*640+80)*3+1] = 255;
+        grid[(i*640+160)*3+1] = 255;
+        grid[(i*640+240)*3+1] = 255;
+        grid[(i*640+320)*3+1] = 255;
+        grid[(i*640+400)*3+1] = 255;
+        grid[(i*640+480)*3+1] = 255;
+        grid[(i*640+560)*3+1] = 255;
+        grid[(i*640+639)*3+1] = 255;
+    }
 
     GLinit();
     GLreshape(GLWIDTH, GLHEIGHT);
@@ -252,6 +277,11 @@ int main(int argc, char *argv[])
                             kinect->stopVideo();
                             kinect->startDepth();
                             mode = 1;
+                            break;
+                        case SDLK_e:
+                            kinect->stopVideo();
+                            kinect->stopDepth();
+                            mode = 2;
                             break;
                     }
                     break;
