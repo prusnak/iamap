@@ -38,6 +38,7 @@ void quit(int rc)
 #ifdef RPI
     bcm_host_deinit();
 #endif
+    SDL_Quit();
     exit(rc);
 }
 
@@ -185,19 +186,24 @@ int main(int argc, char *argv[])
     int done;
     SDL_Event event;
 
-    kinect = Kinect::create();
+    kinect = Kinect::createFake();
     if (!kinect) return 1;
 
 #ifdef RPI
     bcm_host_init();
 #endif
 
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "Unable to initialize SDL:  %s\n", SDL_GetError());
+        return 1;
+    }
+/*
     if (SDL_VideoInit(0) < 0) {
         fprintf(stderr, "Couldn't initialize video driver: %s\n", SDL_GetError());
         return 1;
     }
-
-    window = SDL_CreateWindow("ARMap Sandbox", 100, 100, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL);
+*/
+    window = SDL_CreateWindow("ARMap Sandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, GLWIDTH, GLHEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
 
     context = SDL_GL_CreateContext(window);
     if (!context) {
