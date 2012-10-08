@@ -26,6 +26,7 @@ int mousebutton = 0;
 int mousestart[2] = {0, 0};
 
 uint8_t depth8[640*480];
+uint16_t depth16[640*480];
 uint8_t grid[640*480*3];
 
 struct vec {
@@ -81,10 +82,13 @@ void GLdraw()
     glBindTexture(GL_TEXTURE_2D, tex);
     uint16_t *d;
     switch (mode) {
-        case 0:
+        case 0:  // grid
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, grid);
+            break;
+        case 1:  // video
             glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
             break;
-        case 1:
+        case 2:  // depth
             d = kinect->getDepth();
             for (int i = 0; i < 640*480; i++) {
                 unsigned char c = d[i]*255/5000;
@@ -93,8 +97,17 @@ void GLdraw()
             }
             glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
             break;
-        case 2:
-            glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, grid);
+        case 3:  // depth avg
+            d = kinect->getDepth();
+            for (int i = 0; i < 640*480; i++) {
+                if (d[i]) {
+                    depth16[i] = (d[i]*3 + depth16[i]*17)/20;
+                }
+                unsigned char c = depth16[i]*255/5000;
+                if (c) c = 255 - c;
+                depth8[i] = c;
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
             break;
     }
 
@@ -242,10 +255,11 @@ int main(int argc, char *argv[])
         grid[(i*640+639)*3+1] = 255;
     }
 
+    memset(depth8, 0, sizeof(depth8));
+    memset(depth16, 0, sizeof(depth16));
+
     GLinit();
     GLreshape(GLWIDTH, GLHEIGHT);
-
-    kinect->startVideo();
 
     done = 0;
     while (!done) {
@@ -268,20 +282,30 @@ int main(int argc, char *argv[])
                         case SDLK_ESCAPE:
                             done = 1;
                             break;
-                        case SDLK_q:
+                        case SDLK_q:  // grid
+                            kinect->stopVideo();
                             kinect->stopDepth();
-                            kinect->startVideo();
                             mode = 0;
                             break;
-                        case SDLK_w:
-                            kinect->stopVideo();
-                            kinect->startDepth();
+                        case SDLK_w:  // video
+                            kinect->stopDepth();
+                            kinect->startVideo();
                             mode = 1;
                             break;
-                        case SDLK_e:
+                        case SDLK_e:  // depth
                             kinect->stopVideo();
-                            kinect->stopDepth();
+                            kinect->startDepth();
                             mode = 2;
+                            break;
+                        case SDLK_r:  // depth avg
+                            kinect->stopVideo();
+                            kinect->startDepth();
+                            mode = 3;
+                            break;
+                        case SDLK_z:  // screenshot
+                            kinect->startVideo();
+                            kinect->getVideo(); // dummy for now
+                            kinect->startVideo();
                             break;
                     }
                     break;
@@ -298,11 +322,16 @@ int main(int argc, char *argv[])
                     break;
 
                 case SDL_MOUSEBUTTONDOWN:
-                    mousebutton = event.button.button;
-                    mousestart[0] = event.button.x;
-                    mousestart[1] = event.button.y;
-                    memcpy(&movstart, &mov, sizeof(mov));
-                    memcpy(&rotstart, &rot, sizeof(rot));
+                    if (event.button.button == 1 || event.button.button == 3) {
+                        mousebutton = event.button.button;
+                        mousestart[0] = event.button.x;
+                        mousestart[1] = event.button.y;
+                        memcpy(&movstart, &mov, sizeof(mov));
+                        memcpy(&rotstart, &rot, sizeof(rot));
+                    }
+                    if (event.button.button == 2) {
+                        printf("%d %d\n", event.button.x, event.button.y);
+                    }
                     break;
 
                 case SDL_MOUSEBUTTONUP:
