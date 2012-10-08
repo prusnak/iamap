@@ -26,7 +26,7 @@ int mousebutton = 0;
 int mousestart[2] = {0, 0};
 
 uint8_t depth8[640*480];
-uint16_t depth16[640*480];
+uint32_t depth32[640*480];
 uint8_t grid[640*480*3];
 
 struct vec {
@@ -101,9 +101,9 @@ void GLdraw()
             d = kinect->getDepth();
             for (int i = 0; i < 640*480; i++) {
                 if (d[i]) {
-                    depth16[i] = (d[i]*3 + depth16[i]*17)/20;
+                    depth32[i] = ((d[i]<<16)*4 + depth32[i]*12) / 16;
                 }
-                unsigned char c = depth16[i]*255/5000;
+                unsigned char c = (depth32[i]>>8)/5000;
                 if (c) c = 255 - c;
                 depth8[i] = c;
             }
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     }
 
     memset(depth8, 0, sizeof(depth8));
-    memset(depth16, 0, sizeof(depth16));
+    memset(depth32, 0, sizeof(depth32));
 
     GLinit();
     GLreshape(GLWIDTH, GLHEIGHT);
