@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=$(shell pkg-config --cflags libfreenect sdl2) -Wall -fno-exceptions
+CXXFLAGS=-Iarmap $(shell pkg-config --cflags libfreenect sdl2) -Wall -fno-exceptions
 LDFLAGS=-pthread
 LIBS=$(shell pkg-config --libs libfreenect sdl2) -lm
 ifeq ($(shell test -d /opt/vc/include && echo 1),1)
@@ -10,16 +10,20 @@ else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
 LIBS+=$(shell pkg-config --libs glesv2)
 endif
-OBJ=armap.o sandbox.o
+OBJ_BOOK=armap/armap.o book/book.o
+OBJ_SANDBOX=armap/armap.o sandbox/sandbox.o
 
-all: sandbox
+all: book/book sandbox/sandbox
 
-sandbox: $(OBJ)
-	$(CXX) $(LDFLAGS) $(OBJ) $(LIBS) -o $@
+book/book: $(OBJ_BOOK)
+	$(CXX) $(LDFLAGS) $(OBJ_BOOK) $(LIBS) -o $@
+
+sandbox/sandbox: $(OBJ_SANDBOX)
+	$(CXX) $(LDFLAGS) $(OBJ_SANDBOX) $(LIBS) -o $@
 
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f sandbox $(OBJ)
+	rm -f book/book sandbox/sandbox $(OBJ_BOOK) $(OBJ_SANDBOX)

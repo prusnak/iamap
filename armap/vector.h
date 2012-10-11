@@ -1,5 +1,5 @@
-#ifndef __VECTOR_HPP__
-#define __VECTOR_HPP__
+#ifndef __VECTOR_H__
+#define __VECTOR_H__
 
 #include <cmath>
 #include <cstdio>

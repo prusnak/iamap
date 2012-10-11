@@ -1,7 +1,7 @@
-#ifndef __MATRIX_HPP__
-#define __MATRIX_HPP__
+#ifndef __MATRIX_H__
+#define __MATRIX_H__
 
-#include "Vector.hpp"
+#include "vector.h"
 
 template <typename T>
 struct Matrix2 {

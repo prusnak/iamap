@@ -9,8 +9,8 @@
 #include <bcm_host.h>
 #endif
 
-#include "armap.h"
-#include "Matrix.hpp"
+#include <armap.h>
+#include <matrix.h>
 
 #define GLWIDTH  640
 #define GLHEIGHT 480
