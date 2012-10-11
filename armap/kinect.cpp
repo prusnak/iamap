@@ -1,5 +1,5 @@
 /*
-    ARMap SandBox - Augmented Reality Sandbox Toy
+    ARMap - Augmented Reality Toy
     Copyright (c) 2010 OpenKinect Project
     Copyright (C) 2012 Pavol Rusnak
 

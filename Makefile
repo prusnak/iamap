@@ -10,20 +10,21 @@ else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
 LIBS+=$(shell pkg-config --libs glesv2)
 endif
-OBJ_BOOK=armap/armap.o book/book.o
-OBJ_SANDBOX=armap/armap.o sandbox/sandbox.o
+OBJ_COMMON=armap/app.o armap/kinect.o
+OBJ_BOOK=book/book.o
+OBJ_SANDBOX=sandbox/sandbox.o
 
 all: book/book sandbox/sandbox
 
-book/book: $(OBJ_BOOK)
-	$(CXX) $(LDFLAGS) $(OBJ_BOOK) $(LIBS) -o $@
+book/book: $(OBJ_COMMON) $(OBJ_BOOK)
+	$(CXX) $(LDFLAGS) $(OBJ_BOOK) $(OBJ_COMMON) $(LIBS) -o $@
 
 sandbox/sandbox: $(OBJ_SANDBOX)
-	$(CXX) $(LDFLAGS) $(OBJ_SANDBOX) $(LIBS) -o $@
+	$(CXX) $(LDFLAGS) $(OBJ_SANDBOX) $(OBJ_COMMON) $(LIBS) -o $@
 
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f book/book sandbox/sandbox $(OBJ_BOOK) $(OBJ_SANDBOX)
+	rm -f book/book sandbox/sandbox $(OBJ_BOOK) $(OBJ_SANDBOX) $(OBJ_COMMON)
