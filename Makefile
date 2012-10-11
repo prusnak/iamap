@@ -19,7 +19,7 @@ all: book/book sandbox/sandbox
 book/book: $(OBJ_COMMON) $(OBJ_BOOK)
 	$(CXX) $(LDFLAGS) $(OBJ_BOOK) $(OBJ_COMMON) $(LIBS) -o $@
 
-sandbox/sandbox: $(OBJ_SANDBOX)
+sandbox/sandbox: $(OBJ_COMMON) $(OBJ_SANDBOX)
 	$(CXX) $(LDFLAGS) $(OBJ_SANDBOX) $(OBJ_COMMON) $(LIBS) -o $@
 
 

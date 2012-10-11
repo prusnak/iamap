@@ -110,7 +110,7 @@ void MyApp::draw()
 void MyApp::handleEvent(SDL_Event event)
 {
     switch (event.type) {
-        case SDL_KEYDOWN:
+        case SDL_KEYUP:
             switch (event.key.keysym.sym) {
                 case SDLK_q:  // grid
                     kinect->stopVideo();

@@ -151,6 +151,7 @@ void App::loop()
 {
     GLreshape(width, height);
     done = 0;
+    FILE *f;
     while (!done) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -204,14 +205,29 @@ void App::loop()
                     done = 1;
                     break;
 
-                case SDL_KEYDOWN:
+                case SDL_KEYUP:
                     switch (event.key.keysym.sym) {
                         case SDLK_ESCAPE:
                             done = 1;
                             break;
+                        case SDLK_s:
+                            f = fopen("armap-coords.dat", "wb");
+                            if (!f) break;
+                            fwrite(&mov, sizeof(mov), 1, f);
+                            fwrite(&rot, sizeof(rot), 1, f);
+                            fclose(f);
+                            printf("Coords written to armap-coords.dat\n");
+                            break;
+                        case SDLK_l:
+                            f = fopen("armap-coords.dat", "rb");
+                            if (!f) break;
+                            fread(&mov, sizeof(mov), 1, f);
+                            fread(&rot, sizeof(rot), 1, f);
+                            fclose(f);
+                            printf("Coords read from armap-coords.dat\n");
+                            break;
                     }
                     break;
-
             }
             handleEvent(event);
         }
