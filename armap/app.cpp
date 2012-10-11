@@ -231,6 +231,7 @@ void App::loop()
             }
             handleEvent(event);
         }
+        calc();
         GLdraw();
         SDL_GL_SwapWindow(window);
     }

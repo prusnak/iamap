@@ -34,7 +34,8 @@ class App {
         void init(int width, int height, bool fullscreen);
         void loop();
 
-        virtual void handleEvent(SDL_Event event) = 0;
+        virtual void handleEvent(SDL_Event event) { }
+        virtual void calc() { }
         virtual void draw() = 0;
 
         int width, height;
