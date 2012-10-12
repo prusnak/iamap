@@ -112,22 +112,22 @@ void MyApp::handleEvent(SDL_Event event)
     switch (event.type) {
         case SDL_KEYUP:
             switch (event.key.keysym.sym) {
-                case SDLK_q:  // grid
+                case SDLK_1:  // grid
                     kinect->stopVideo();
                     kinect->stopDepth();
                     mode = 0;
                     break;
-                case SDLK_w:  // video
+                case SDLK_2:  // video
                     kinect->stopDepth();
                     kinect->startVideo();
                     mode = 1;
                     break;
-                case SDLK_e:  // depth
+                case SDLK_3:  // depth
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
                     break;
-                case SDLK_r:  // depth avg
+                case SDLK_4:  // depth avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 3;
@@ -152,8 +152,8 @@ int main(int argc, char *argv[])
     app->init();
     app->loop();
 
-    delete kinect;
     delete app;
+    delete kinect;
     return 0;
 }
 
