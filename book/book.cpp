@@ -9,6 +9,7 @@ class MyApp: public App {
     private:
         int mode;
         uint8_t px[640*480*3];
+        uint16_t *depth;
 };
 
 Kinect *kinect;
@@ -22,42 +23,42 @@ void MyApp::init()
 #define BOOK_L 180
 #define BOOK_M 320
 #define BOOK_R 460
-#define BOOK_T 240
+#define BOOK_T 220
 #define BOOK_B 320
-#define BOOK_DMIN 710
-#define BOOK_DMAX 730
+#define BOOK_DMIN 600
+#define BOOK_DMAX 720
 
-#define PERSON_B 150
-#define PERSON_DMIN 900
+#define PERSON_B 120
+#define PERSON_DMIN 850
 #define PERSON_DMAX 1600
 
 void MyApp::calc()
 {
-    if (mode == 2) {
+    if (mode == 1 || mode == 2) {
         int cntp = 0, cnt1 = 0, cnt2 = 0;
         static int avgp = 0, avg1 = 0, avg2 = 0;
         static int oldp = 0, snc1 = 0, snc2 = 0;
-        uint16_t *d = kinect->getDepth();
+        depth = kinect->getDepth();
         for (int i = 0; i < 640*PERSON_B; i++) {
-            if (d[i] > PERSON_DMIN && d[i] < PERSON_DMAX) {
+            if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) {
                 cntp++;
             }
         }
         for (int y = BOOK_T; y <= BOOK_B; y++) {
             for (int x = BOOK_L; x < BOOK_M; x++) {
-                if (d[x+y*640] > BOOK_DMIN && d[x+y*640] < BOOK_DMAX) {
+                if (depth[x+y*640] > BOOK_DMIN && depth[x+y*640] < BOOK_DMAX) {
                     cnt1++;
                 }
             }
             for (int x = BOOK_M; x <= BOOK_R; x++) {
-                if (d[x+y*640] > BOOK_DMIN && d[x+y*640] < BOOK_DMAX) {
+                if (depth[x+y*640] > BOOK_DMIN && depth[x+y*640] < BOOK_DMAX) {
                     cnt2++;
                 }
             }
         }
-        avgp = (avgp*3 + cntp) / 4;
-        avg1 = (avg1*3 + cnt1) / 4;
-        avg2 = (avg2*3 + cnt2) / 4;
+        avgp = (avgp*4 + cntp) / 5;
+        avg1 = (avg1*4 + cnt1) / 5;
+        avg2 = (avg2*4 + cnt2) / 5;
         if (avgp >= 1000 && oldp < 1000) {
             printf("person in\n");
         }
@@ -76,16 +77,18 @@ void MyApp::calc()
         if (snc2 > 0) {
             snc2--;
         }
-        if (snc1 > 0 && avg1 < 200 && avg2 > 500) {
+        if (snc1 > 0 && avg1 < 500 && avg2 > 500) {
             printf("page ++\n");
             snc1 = 0;
+            snc2 = 0;
         }
-        if (snc2 > 0 && avg2 < 200 && avg1 > 500) {
+        if (snc2 > 0 && avg2 < 500 && avg1 > 500) {
             printf("page --\n");
+            snc1 = 0;
             snc2 = 0;
         }
         oldp = avgp;
-        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
+//        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
     }
 }
 
@@ -112,20 +115,19 @@ void MyApp::draw()
         p = kinect->getVideo();
     } else
     if (mode == 1) {
-        uint16_t *d = kinect->getDepth();
         p = px;
         for (int i = 0; i < 640*480; i++) {
-            if (d[i] == 0) {
+            if (depth[i] == 0) {
                 *p = 0; p++;
                 *p = 0; p++;
                 *p = 0; p++;
             } else
-            if (d[i] > BOOK_DMIN && d[i] < BOOK_DMAX) { // book
+            if (depth[i] > BOOK_DMIN && depth[i] < BOOK_DMAX) { // book
                 *p = 0; p++;
                 *p = 128; p++;
                 *p = 128; p++;
             } else
-            if (d[i] > PERSON_DMIN && d[i] < PERSON_DMAX) { // person
+            if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) { // person
                 *p = 128; p++;
                 *p = 0; p++;
                 *p = 128; p++;
