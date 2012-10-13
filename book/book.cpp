@@ -70,7 +70,7 @@ void MyApp::calc()
     if (mode == 1 || mode == 2) {
         int cntp = 0, cnt1 = 0, cnt2 = 0;
         static int avgp = 0, avg1 = 0, avg2 = 0;
-        static int oldp = 0, snc1 = 0, snc2 = 0;
+        static int oldp = 0, old1 = 0, old2 = 0;
         depth = kinect->getDepth();
         for (int i = 0; i < 640*PERSON_B; i++) {
             if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) {
@@ -102,37 +102,33 @@ void MyApp::calc()
             printf("person out\n");
             alpha1diff = -1;
         }
-        if (avg1 > 500) {
-            snc1 = 10;
-        }
-        if (avg2 > 500) {
-            snc2 = 10;
-        }
-        if (snc1 > 0) {
-            snc1--;
-        }
-        if (snc2 > 0) {
-            snc2--;
-        }
-        if (snc1 > 0 && avg1 < 500 && avg2 > 500) {
-            printf("page ++\n");
-            snc1 = 0;
-            snc2 = 0;
-            if (pageid < MAXPAGES) {
-                nextpageid = pageid + 1;
+
+        if (avg1 >= 500 && old1 < 500) {
+            if (nextpageid % 2 == 0) {
+                alpha2diff = -1;
+                nextpageid = nextpageid + 1;
+                printf("page +0\n");
+            } else {
+                alpha2diff = +1;
+                nextpageid = nextpageid - 1;
+                printf("page --\n");
             }
-            alpha2diff = -1;
         }
-        if (snc2 > 0 && avg2 < 500 && avg1 > 500) {
-            printf("page --\n");
-            snc1 = 0;
-            snc2 = 0;
-            if (pageid > 0) {
-                nextpageid = pageid - 1;
+
+        if (avg2 >= 500 && old2 < 500) {
+            if (nextpageid % 2 == 0) {
+                alpha2diff = -1;
+                nextpageid = nextpageid - 1;
+                printf("page -0\n");
+            } else {
+                alpha2diff = +1;
+                nextpageid = nextpageid + 1;
+                printf("page ++\n");
             }
-            alpha2diff = -1;
         }
         oldp = avgp;
+        old1 = avg1;
+        old2 = avg2;
 //        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
     }
     if (alpha1 < 1.0 && alpha1diff == 1) {
