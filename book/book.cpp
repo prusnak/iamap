@@ -47,22 +47,16 @@ void MyApp::init()
 #define PERSON_DMIN 850
 #define PERSON_DMAX 1600
 
-#define MAXPAGES 150
+#define MAXPAGES 4 // pages/2
 
 void MyApp::loadPages()
 {
-    // TODO: load correct textures
-    if (rand()%2) {
-        loadTexture("pageA.png", texs[0]);
-    } else {
-        loadTexture("pageB.png", texs[0]);
-    }
-    if (rand()%2) {
-        loadTexture("pageA.png", texs[1]);
-    } else {
-        loadTexture("pageB.png", texs[1]);
-    }
-    printf("page %d loaded\n", pageid);
+    char buf[100];
+    snprintf(buf, sizeof(buf), "page%03d.png", pageid);
+    loadTexture(buf, texs[0]);
+    snprintf(buf, sizeof(buf), "page%03d.png", pageid + 1);
+    loadTexture(buf, texs[1]);
+    printf("pages %d-%d loaded\n", pageid, pageid + 1);
 }
 
 void MyApp::calc()
@@ -95,7 +89,7 @@ void MyApp::calc()
         if (avgp >= 1000 && oldp < 1000) {
             printf("person in\n");
             alpha1diff = 1;
-            pageid = rand() % MAXPAGES;
+            pageid = (rand() % MAXPAGES)*2;
             loadPages();
         }
         if (oldp >= 1000 && avgp < 1000) {
@@ -129,7 +123,7 @@ void MyApp::calc()
         oldp = avgp;
         old1 = avg1;
         old2 = avg2;
-//        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
+//        printf("%d %d %d %d %d\n", avgp, avg1, avg2, pageid, nextpageid);
     }
     if (alpha1 < 1.0 && alpha1diff == 1) {
         alpha1 += 0.02;
