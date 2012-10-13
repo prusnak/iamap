@@ -13,7 +13,6 @@ class MyApp: public App {
         uint16_t *depth;
         float alpha1, alpha2;
         int alpha1diff, alpha2diff;
-        int bookid;
         int pageid, nextpageid;
 };
 
@@ -28,7 +27,6 @@ void MyApp::init()
     alpha2 = 1;
     alpha1diff = 0;
     alpha2diff = 0;
-    bookid = 0;
     pageid = 0;
     nextpageid = 0;
 
@@ -49,8 +47,7 @@ void MyApp::init()
 #define PERSON_DMIN 850
 #define PERSON_DMAX 1600
 
-#define MAXBOOKS 10
-#define MAXPAGES 10
+#define MAXPAGES 150
 
 void MyApp::loadPages()
 {
@@ -65,7 +62,7 @@ void MyApp::loadPages()
     } else {
         loadTexture("pageB.png", texs[1]);
     }
-    printf("book %d page %d loaded\n", bookid, pageid);
+    printf("page %d loaded\n", pageid);
 }
 
 void MyApp::calc()
@@ -98,8 +95,7 @@ void MyApp::calc()
         if (avgp >= 1000 && oldp < 1000) {
             printf("person in\n");
             alpha1diff = 1;
-            bookid = rand() % MAXBOOKS;
-            pageid = 0;
+            pageid = rand() % MAXPAGES;
             loadPages();
         }
         if (oldp >= 1000 && avgp < 1000) {
