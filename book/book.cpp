@@ -1,5 +1,4 @@
 #include <armap.h>
-#include <SDL/SDL_image.h> // ugly hack until SDL_image 2.0 is out
 
 class MyApp: public App {
     public:
@@ -11,6 +10,10 @@ class MyApp: public App {
         int mode;
         uint8_t px[640*480*3];
         uint16_t *depth;
+        float alpha1, alpha2;
+        int alpha1diff, alpha2diff;
+        int bookid;
+        int pageid, nextpageid;
 };
 
 Kinect *kinect;
@@ -19,19 +22,21 @@ MyApp *app;
 void MyApp::init()
 {
     App::init(640, 480, false);
+
+    alpha1 = 0;
+    alpha2 = 1;
+    alpha1diff = 0;
+    alpha2diff = 0;
+    bookid = 0;
+    pageid = 0;
+    nextpageid = 0;
+
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    SDL_Surface *img;
-
-    glBindTexture(GL_TEXTURE_2D, texs[0]);
-    img = IMG_Load("pageA.png");
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, 400, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    SDL_FreeSurface(img);
-
-    glBindTexture(GL_TEXTURE_2D, texs[1]);
-    img = IMG_Load("pageB.png");
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, 400, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
-    SDL_FreeSurface(img);
+    loadTexture("pageA.png", texs[0]);
+    loadTexture("pageB.png", texs[1]);
 }
 
 #define BOOK_L 180
@@ -75,9 +80,15 @@ void MyApp::calc()
         avg2 = (avg2*4 + cnt2) / 5;
         if (avgp >= 1000 && oldp < 1000) {
             printf("person in\n");
+            alpha1diff = 1;
+            bookid = rand() % 10; // TODO: max NUM of books
+            pageid = 0;
+            printf("book %d page %d\n", bookid, pageid);
+            // TODO: load textures
         }
         if (oldp >= 1000 && avgp < 1000) {
             printf("person out\n");
+            alpha1diff = -1;
         }
         if (avg1 > 500) {
             snc1 = 10;
@@ -95,16 +106,42 @@ void MyApp::calc()
             printf("page ++\n");
             snc1 = 0;
             snc2 = 0;
+            if (pageid < 10) { // TODO: max pages
+                nextpageid = pageid + 1;
+            }
+            alpha2diff = -1;
         }
         if (snc2 > 0 && avg2 < 500 && avg1 > 500) {
             printf("page --\n");
             snc1 = 0;
             snc2 = 0;
+            if (pageid > 0) {
+                nextpageid = pageid - 1;
+            }
+            alpha2diff = -1;
         }
         oldp = avgp;
 //        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
     }
-
+    if (alpha1 < 1.0 && alpha1diff == 1) {
+        alpha1 += 0.02;
+    }
+    if (alpha1 > 0.0 && alpha1diff == -1) {
+        alpha1 -= 0.02;
+    }
+    if (alpha2 < 1.0 && alpha2diff == 1) {
+        alpha2 += 0.05;
+    }
+    if (alpha2diff == -1) {
+        if (alpha2 > 0.0) {
+            alpha2 -= 0.05;
+        } else {
+            alpha2diff = 1;
+            pageid = nextpageid;
+            printf("book %d page %d\n", bookid, pageid);
+            // TODO: load textures
+        }
+    }
 }
 
 void MyApp::draw()
@@ -133,7 +170,7 @@ void MyApp::draw()
         {1, 1},
         {0, 1}
     };
-    static const GLfloat colors[4][4] = {
+    static GLfloat colors[4][4] = {
         {1,1,1,1},
         {1,1,1,1},
         {1,1,1,1},
@@ -197,6 +234,7 @@ void MyApp::draw()
             p[(PERSON_B*640+i)*3+1] = 255;
             p[(PERSON_B*640+i)*3+2] = 0;
         }
+        colors[0][3] = colors[1][3] = colors[2][3] = colors[3][3] = 1;
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, p);
         glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
@@ -212,6 +250,7 @@ void MyApp::draw()
     }
 
     if (mode == 2) {
+        colors[0][3] = colors[1][3] = colors[2][3] = colors[3][3] = alpha1 * alpha2;
         glBindTexture(GL_TEXTURE_2D, texs[0]);
         glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, vertsA);
         glVertexAttribPointer(attr_col, 4, GL_FLOAT, GL_FALSE, 0, colors);

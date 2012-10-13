@@ -24,6 +24,12 @@
 
 #define GLreshape(x, y) glViewport(0, 0, (GLint)(x), (GLint)(y))
 
+// ugly hack until SDL_image 2.0 is out
+// copied from SDL_image.h
+extern "C" {
+extern DECLSPEC SDL_Surface *SDLCALL IMG_Load(const char *file);
+};
+
 App::App()
 {
     window = NULL;
@@ -37,6 +43,7 @@ App::App()
     attr_pos = 0;
     attr_col = 1;
     attr_tex = 2;
+    srand(time(NULL));
 }
 
 void App::init(int width, int height, bool fullscreen)
@@ -243,6 +250,14 @@ void App::loop()
         GLdraw();
         SDL_GL_SwapWindow(window);
     }
+}
+
+void App::loadTexture(const char *fn, GLuint tex)
+{
+    glBindTexture(GL_TEXTURE_2D, tex);
+    SDL_Surface *img = IMG_Load(fn);
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+    SDL_FreeSurface(img);
 }
 
 void App::GLdraw()

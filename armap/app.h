@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include <SDL.h>
 #include <SDL_opengles2.h>
@@ -33,6 +34,7 @@ class App {
         virtual ~App();
         void init(int width, int height, bool fullscreen);
         void loop();
+        void loadTexture(const char *fn, GLuint tex);
 
         virtual void handleEvent(SDL_Event event) { }
         virtual void calc() { }
