@@ -39,7 +39,7 @@ class App {
         virtual void draw() = 0;
 
         int width, height;
-        int attr_pos, attr_texcoord;
+        int attr_pos, attr_col, attr_tex;
         GLuint tex;
         GLuint texs[16];
 

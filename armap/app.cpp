@@ -30,18 +30,20 @@ App::App()
     context = NULL;
     mousebutton = 0;
     mousestart[0] = 0; mousestart[1] = 0;
-    mov.x = 0; mov.y = 0; mov.z = 579;
+    mov.x = 0; mov.y = 0; mov.z = 0;
     rot.x = 0; rot.y = 0; rot.z = 0;
     u_Projection = -1;
     u_ModelView = -1;
     attr_pos = 0;
-    attr_texcoord = 1;
+    attr_col = 1;
+    attr_tex = 2;
 }
 
 void App::init(int width, int height, bool fullscreen)
 {
     this->width = width;
     this->height = height;
+    this->mov.z = width/1.105;
 
 #ifdef RPI
     bcm_host_init();
@@ -71,10 +73,12 @@ void App::init(int width, int height, bool fullscreen)
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 
     const char *fragShaderText = " \
+varying vec4 v_col; \
 varying vec2 v_texcoord; \
 uniform sampler2D tex; \
 void main() { \
    gl_FragColor = texture2D(tex, v_texcoord); \
+   gl_FragColor *= v_col; \
 } \
 ";
 
@@ -82,11 +86,14 @@ void main() { \
 uniform mat4 m_modelview; \
 uniform mat4 m_projection; \
 attribute vec4 pos; \
+attribute vec4 col; \
 attribute vec2 texcoord; \
+varying vec4 v_col; \
 varying vec2 v_texcoord; \
 void main() { \
    gl_Position = m_projection * m_modelview * pos; \
    v_texcoord = texcoord; \
+   v_col = col; \
 } \
 ";
 
@@ -126,7 +133,8 @@ void main() { \
 
     glUseProgram(program);
     attr_pos = glGetAttribLocation(program, "pos");
-    attr_texcoord = glGetAttribLocation(program, "texcoord");
+    attr_col = glGetAttribLocation(program, "col");
+    attr_tex = glGetAttribLocation(program, "texcoord");
     u_Projection = glGetUniformLocation(program, "m_projection");
     u_ModelView = glGetUniformLocation(program, "m_modelview");
 
@@ -216,7 +224,7 @@ void App::loop()
                             fwrite(&mov, sizeof(mov), 1, f);
                             fwrite(&rot, sizeof(rot), 1, f);
                             fclose(f);
-                            printf("Coords written to armap-coords.dat\n");
+                            printf("Coords written to armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
                             break;
                         case SDLK_l:
                             f = fopen("armap-coords.dat", "rb");
@@ -224,7 +232,7 @@ void App::loop()
                             fread(&mov, sizeof(mov), 1, f);
                             fread(&rot, sizeof(rot), 1, f);
                             fclose(f);
-                            printf("Coords read from armap-coords.dat\n");
+                            printf("Coords read from armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
                             break;
                     }
                     break;

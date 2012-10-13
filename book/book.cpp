@@ -1,4 +1,5 @@
 #include <armap.h>
+#include <SDL/SDL_image.h> // ugly hack until SDL_image 2.0 is out
 
 class MyApp: public App {
     public:
@@ -18,6 +19,19 @@ MyApp *app;
 void MyApp::init()
 {
     App::init(640, 480, false);
+    glEnable(GL_TEXTURE_2D);
+
+    SDL_Surface *img;
+
+    glBindTexture(GL_TEXTURE_2D, texs[0]);
+    img = IMG_Load("pageA.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, 400, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+    SDL_FreeSurface(img);
+
+    glBindTexture(GL_TEXTURE_2D, texs[1]);
+    img = IMG_Load("pageB.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, 400, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+    SDL_FreeSurface(img);
 }
 
 #define BOOK_L 180
@@ -90,6 +104,7 @@ void MyApp::calc()
         oldp = avgp;
 //        printf("%d %d %d %d %d\n", avgp, avg1, avg2, snc1, snc2);
     }
+
 }
 
 void MyApp::draw()
@@ -100,15 +115,30 @@ void MyApp::draw()
         {  (GLfloat)width/2, -(GLfloat)height/2 },
         { -(GLfloat)width/2, -(GLfloat)height/2 }
     };
+    static const GLfloat vertsA[4][2] = {
+        { -(GLfloat)width/2-8,  (GLfloat)height/2 },
+        {                  -8,  (GLfloat)height/2 },
+        {                  -8, -(GLfloat)height/2 },
+        { -(GLfloat)width/2-8, -(GLfloat)height/2 }
+    };
+    static const GLfloat vertsB[4][2] = {
+        {                   8,  (GLfloat)height/2 },
+        {  (GLfloat)width/2+8,  (GLfloat)height/2 },
+        {  (GLfloat)width/2+8, -(GLfloat)height/2 },
+        {                  +8, -(GLfloat)height/2 }
+    };
     static const GLfloat texcoords[4][2] = {
         {0, 0},
         {1, 0},
         {1, 1},
         {0, 1}
     };
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    static const GLfloat colors[4][4] = {
+        {1,1,1,1},
+        {1,1,1,1},
+        {1,1,1,1},
+        {1,1,1,1}
+    };
 
     uint8_t *p;
     if (mode == 0) {
@@ -167,16 +197,46 @@ void MyApp::draw()
             p[(PERSON_B*640+i)*3+1] = 255;
             p[(PERSON_B*640+i)*3+2] = 0;
         }
+        glBindTexture(GL_TEXTURE_2D, tex);
         glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, p);
         glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-        glVertexAttribPointer(attr_texcoord, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+        glVertexAttribPointer(attr_col, 4, GL_FLOAT, GL_FALSE, 0, colors);
+        glVertexAttribPointer(attr_tex, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
         glEnableVertexAttribArray(attr_pos);
-        glEnableVertexAttribArray(attr_texcoord);
+        glEnableVertexAttribArray(attr_col);
+        glEnableVertexAttribArray(attr_tex);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glDisableVertexAttribArray(attr_pos);
-        glDisableVertexAttribArray(attr_texcoord);
+        glDisableVertexAttribArray(attr_col);
+        glDisableVertexAttribArray(attr_tex);
     }
 
+    if (mode == 2) {
+        glBindTexture(GL_TEXTURE_2D, texs[0]);
+        glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, vertsA);
+        glVertexAttribPointer(attr_col, 4, GL_FLOAT, GL_FALSE, 0, colors);
+        glVertexAttribPointer(attr_tex, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+        glEnableVertexAttribArray(attr_pos);
+        glEnableVertexAttribArray(attr_col);
+        glEnableVertexAttribArray(attr_tex);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glDisableVertexAttribArray(attr_pos);
+        glDisableVertexAttribArray(attr_col);
+        glDisableVertexAttribArray(attr_col);
+
+        glBindTexture(GL_TEXTURE_2D, texs[1]);
+        glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, vertsB);
+        glVertexAttribPointer(attr_col, 4, GL_FLOAT, GL_FALSE, 0, colors);
+        glVertexAttribPointer(attr_tex, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+        glEnableVertexAttribArray(attr_pos);
+        glEnableVertexAttribArray(attr_col);
+        glEnableVertexAttribArray(attr_tex);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glDisableVertexAttribArray(attr_pos);
+        glDisableVertexAttribArray(attr_col);
+        glDisableVertexAttribArray(attr_tex);
+
+    }
 }
 
 void MyApp::handleEvent(SDL_Event event)

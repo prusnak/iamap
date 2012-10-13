@@ -62,6 +62,12 @@ void MyApp::draw()
         {1, 1},
         {0, 1}
     };
+    static const GLfloat colors[4][4] = {
+        {1,1,1,1},
+        {1,1,1,1},
+        {1,1,1,1},
+        {1,1,1,1}
+    };
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex);
@@ -97,14 +103,15 @@ void MyApp::draw()
     }
 
     glVertexAttribPointer(attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-    glVertexAttribPointer(attr_texcoord, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+    glVertexAttribPointer(attr_col, 4, GL_FLOAT, GL_FALSE, 0, colors);
+    glVertexAttribPointer(attr_tex, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
     glEnableVertexAttribArray(attr_pos);
-    glEnableVertexAttribArray(attr_texcoord);
-
+    glEnableVertexAttribArray(attr_col);
+    glEnableVertexAttribArray(attr_tex);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
     glDisableVertexAttribArray(attr_pos);
-    glDisableVertexAttribArray(attr_texcoord);
+    glDisableVertexAttribArray(attr_col);
+    glDisableVertexAttribArray(attr_tex);
 }
 
 void MyApp::handleEvent(SDL_Event event)

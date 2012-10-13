@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS=-Iarmap $(shell pkg-config --cflags libfreenect sdl2) -Wall -fno-exceptions
 LDFLAGS=-pthread
-LIBS=$(shell pkg-config --libs libfreenect sdl2) -lm
+LIBS=$(shell pkg-config --libs libfreenect sdl2) -lm -lSDL_image
 ifeq ($(shell test -d /opt/vc/include && echo 1),1)
 CXXFLAGS+=-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -DRPI=1
 LDFLAGS+=-L/opt/vc/lib
@@ -21,7 +21,6 @@ book/book: $(OBJ_COMMON) $(OBJ_BOOK)
 
 sandbox/sandbox: $(OBJ_COMMON) $(OBJ_SANDBOX)
 	$(CXX) $(LDFLAGS) $(OBJ_SANDBOX) $(OBJ_COMMON) $(LIBS) -o $@
-
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
