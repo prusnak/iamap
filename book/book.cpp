@@ -6,6 +6,7 @@ class MyApp: public App {
         void calc();
         void draw();
         void handleEvent(SDL_Event event);
+        void loadPages();
     private:
         int mode;
         uint8_t px[640*480*3];
@@ -34,9 +35,6 @@ void MyApp::init()
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    loadTexture("pageA.png", texs[0]);
-    loadTexture("pageB.png", texs[1]);
 }
 
 #define BOOK_L 180
@@ -50,6 +48,25 @@ void MyApp::init()
 #define PERSON_B 120
 #define PERSON_DMIN 850
 #define PERSON_DMAX 1600
+
+#define MAXBOOKS 10
+#define MAXPAGES 10
+
+void MyApp::loadPages()
+{
+    // TODO: load correct textures
+    if (rand()%2) {
+        loadTexture("pageA.png", texs[0]);
+    } else {
+        loadTexture("pageB.png", texs[0]);
+    }
+    if (rand()%2) {
+        loadTexture("pageA.png", texs[1]);
+    } else {
+        loadTexture("pageB.png", texs[1]);
+    }
+    printf("book %d page %d loaded\n", bookid, pageid);
+}
 
 void MyApp::calc()
 {
@@ -81,10 +98,9 @@ void MyApp::calc()
         if (avgp >= 1000 && oldp < 1000) {
             printf("person in\n");
             alpha1diff = 1;
-            bookid = rand() % 10; // TODO: max NUM of books
+            bookid = rand() % MAXBOOKS;
             pageid = 0;
-            printf("book %d page %d\n", bookid, pageid);
-            // TODO: load textures
+            loadPages();
         }
         if (oldp >= 1000 && avgp < 1000) {
             printf("person out\n");
@@ -106,7 +122,7 @@ void MyApp::calc()
             printf("page ++\n");
             snc1 = 0;
             snc2 = 0;
-            if (pageid < 10) { // TODO: max pages
+            if (pageid < MAXPAGES) {
                 nextpageid = pageid + 1;
             }
             alpha2diff = -1;
@@ -138,8 +154,7 @@ void MyApp::calc()
         } else {
             alpha2diff = 1;
             pageid = nextpageid;
-            printf("book %d page %d\n", bookid, pageid);
-            // TODO: load textures
+            loadPages();
         }
     }
 }
