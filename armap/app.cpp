@@ -62,9 +62,9 @@ void App::init(int width, int height, bool fullscreen)
     }
 
     if (!fullscreen) {
-        window = SDL_CreateWindow("ARMap Sandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
+        window = SDL_CreateWindow("ARMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
     } else {
-        window = SDL_CreateWindow("ARMap Sandbox", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
+        window = SDL_CreateWindow("ARMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
     }
 
     context = SDL_GL_CreateContext(window);
