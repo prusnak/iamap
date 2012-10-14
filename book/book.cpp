@@ -1,5 +1,13 @@
 #include <armap.h>
 
+enum PageState {
+  PAGE_DOWN,
+  PAGE_LEFT,
+  PAGE_LEFTRIGHT,
+  PAGE_RIGHT,
+  PAGE_RIGHTLEFT
+};
+
 class MyApp: public App {
     public:
         void init();
@@ -13,7 +21,9 @@ class MyApp: public App {
         uint16_t *depth;
         float alpha1, alpha2;
         int alpha1diff, alpha2diff;
-        int pageid, nextpageid;
+        int pageid;
+        PageState pagestate;
+        bool person;
 };
 
 Kinect *kinect;
@@ -21,14 +31,15 @@ MyApp *app;
 
 void MyApp::init()
 {
-    App::init(640, 480, false);
+    App::init(1024, 768, false);
 
     alpha1 = 0;
     alpha2 = 1;
     alpha1diff = 0;
     alpha2diff = 0;
     pageid = 0;
-    nextpageid = 0;
+    pagestate = PAGE_DOWN;
+    person = false;
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -41,13 +52,13 @@ void MyApp::init()
 #define BOOK_T 220
 #define BOOK_B 320
 #define BOOK_DMIN 600
-#define BOOK_DMAX 720
+#define BOOK_DMAX 760
 
 #define PERSON_B 120
 #define PERSON_DMIN 850
 #define PERSON_DMAX 1600
 
-#define MAXPAGES 4 // pages/2
+#define MAXPAGES 8 // has to be even!
 
 void MyApp::loadPages()
 {
@@ -64,7 +75,6 @@ void MyApp::calc()
     if (mode == 1 || mode == 2) {
         int cntp = 0, cnt1 = 0, cnt2 = 0;
         static int avgp = 0, avg1 = 0, avg2 = 0;
-        static int oldp = 0, old1 = 0, old2 = 0;
         depth = kinect->getDepth();
         for (int i = 0; i < 640*PERSON_B; i++) {
             if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) {
@@ -83,65 +93,88 @@ void MyApp::calc()
                 }
             }
         }
-        avgp = (avgp*4 + cntp) / 5;
-        avg1 = (avg1*4 + cnt1) / 5;
-        avg2 = (avg2*4 + cnt2) / 5;
-        if (avgp >= 1000 && oldp < 1000) {
-            printf("person in\n");
-            alpha1diff = 1;
-            pageid = (rand() % MAXPAGES)*2;
-            loadPages();
-        }
-        if (oldp >= 1000 && avgp < 1000) {
-            printf("person out\n");
-            alpha1diff = -1;
-        }
+        avgp = (avgp*9 + cntp) / 10;
+        avg1 = (avg1*9 + cnt1) / 10;
+        avg2 = (avg2*9 + cnt2) / 10;
 
-        if (avg1 >= 500 && old1 < 500) {
-            if (nextpageid % 2 == 0) {
-                alpha2diff = -1;
-                nextpageid = nextpageid + 1;
-                printf("page +0\n");
-            } else {
-                alpha2diff = +1;
-                nextpageid = nextpageid - 1;
-                printf("page --\n");
+        if (avgp >= 5000) {
+            if (person == false) {
+                printf("person in\n");
+                person = true;
+                pageid = (rand() % (MAXPAGES/2))*2;
+                pagestate = PAGE_DOWN;
+                loadPages();
+                alpha1diff = 1;
+            }
+        } else
+        if (avgp <= 4000) {
+            if (person == true) {
+                printf("person out\n");
+                person = false;
+                alpha1diff = -1;
             }
         }
 
-        if (avg2 >= 500 && old2 < 500) {
-            if (nextpageid % 2 == 0) {
-                alpha2diff = -1;
-                nextpageid = nextpageid - 1;
-                printf("page -0\n");
-            } else {
-                alpha2diff = +1;
-                nextpageid = nextpageid + 1;
-                printf("page ++\n");
-            }
+        if (avg2 >= 500 && avg1 < 500) { // left side up
+           alpha2diff = -1;
+           if (pagestate == PAGE_RIGHT) {
+               pagestate = PAGE_RIGHTLEFT;
+               printf("RIGHT -> RIGHTLEFT\n");
+           } else
+           if (pagestate == PAGE_DOWN) {
+               pagestate = PAGE_LEFT;
+               printf("DOWN -> LEFT\n");
+           } else
+           if (pagestate == PAGE_LEFTRIGHT) {
+               pagestate = PAGE_LEFT;
+               printf("LEFTRIGHT -> LEFT\n");
+           }
         }
-        oldp = avgp;
-        old1 = avg1;
-        old2 = avg2;
-//        printf("%d %d %d %d %d\n", avgp, avg1, avg2, pageid, nextpageid);
+
+        if (avg1 >= 500 && avg2 < 500) { // right side up
+           alpha2diff = -1;
+           if (pagestate == PAGE_LEFT) {
+               pagestate = PAGE_LEFTRIGHT;
+               printf("LEFT -> LEFTRIGHT\n");
+           } else
+           if (pagestate == PAGE_DOWN) {
+               pagestate = PAGE_RIGHT;
+               printf("DOWN -> RIGHT\n");
+           } else
+           if (pagestate == PAGE_RIGHTLEFT) {
+               pagestate = PAGE_RIGHT;
+               printf("RIGHTLEFT -> RIGHT\n");
+           }
+        }
+
+        if (avg1 < 500 && avg2 < 500) { // both sides down
+            if (pagestate == PAGE_LEFTRIGHT && pageid > 1) {
+                printf("LEFTRIGHT -> DOWN\n");
+                pageid -= 2;
+                loadPages();
+            } else
+            if (pagestate == PAGE_RIGHTLEFT && pageid < MAXPAGES - 2) {
+                printf("RIGHTLEFT -> DOWN\n");
+                pageid += 2;
+                loadPages();
+            }
+            alpha2diff = 1;
+            pagestate = PAGE_DOWN;
+        }
+
+//        printf("%d %d %d\n", avgp, avg1, avg2);
     }
     if (alpha1 < 1.0 && alpha1diff == 1) {
-        alpha1 += 0.02;
+        alpha1 += 0.05;
     }
     if (alpha1 > 0.0 && alpha1diff == -1) {
-        alpha1 -= 0.02;
+        alpha1 -= 0.05;
     }
     if (alpha2 < 1.0 && alpha2diff == 1) {
         alpha2 += 0.05;
     }
-    if (alpha2diff == -1) {
-        if (alpha2 > 0.0) {
-            alpha2 -= 0.05;
-        } else {
-            alpha2diff = 1;
-            pageid = nextpageid;
-            loadPages();
-        }
+    if (alpha2 > 0.0 && alpha2diff == -1) {
+        alpha2 -= 0.05;
     }
 }
 
