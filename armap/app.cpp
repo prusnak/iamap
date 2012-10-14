@@ -213,7 +213,11 @@ void App::loop()
                     break;
 
                 case SDL_MOUSEWHEEL:
-                    mov.z -= event.wheel.y*10;
+                    if (SDL_GetModState() & KMOD_LALT) {
+                        rot.z -= event.wheel.y*1;
+                    } else {
+                        mov.z -= event.wheel.y*10;
+                    }
                     break;
 
                 case SDL_QUIT:
@@ -269,10 +273,12 @@ void App::GLdraw()
     glUniformMatrix4fv(u_Projection, 1, GL_FALSE, matProjection.Pointer());
 
     matModelView =
+        mat4().Rotate(-rot.z, vec3(0.0, 0.0, 1.0)) *
         mat4().Rotate(-rot.x, vec3(0.0, 1.0, 0.0)) *
         mat4().Translate(mov.x, -mov.y, 0.0) *
         mat4().Rotate(-rot.y, vec3(1.0, 0.0, 0.0)) *
-        mat4().Translate(0.0, 0.0, -mov.z);
+        mat4().Translate(0.0, 0.0, -mov.z)
+    ;
     glUniformMatrix4fv(u_ModelView, 1, GL_FALSE, matModelView.Pointer());
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
