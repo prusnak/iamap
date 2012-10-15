@@ -46,26 +46,29 @@ void MyApp::init()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-#define BOOK_L 180
+#define BOOK_L 240
 #define BOOK_M 320
-#define BOOK_R 460
-#define BOOK_T 220
-#define BOOK_B 320
-#define BOOK_DMIN 600
-#define BOOK_DMAX 760
+#define BOOK_R 400
+#define BOOK_T 275
+#define BOOK_B 350
+#define BOOK_DMIN 1400
+#define BOOK_DMAX 1590
 
-#define PERSON_B 120
-#define PERSON_DMIN 850
-#define PERSON_DMAX 1600
+#define PERSON_L 150
+#define PERSON_R 470
+#define PERSON_T 0
+#define PERSON_B 220
+#define PERSON_DMIN 900
+#define PERSON_DMAX 2500
 
-#define MAXPAGES 8 // has to be even!
+#define MAXPAGES 84 // has to be even!
 
 void MyApp::loadPages()
 {
     char buf[100];
-    snprintf(buf, sizeof(buf), "page%03d.png", pageid);
+    snprintf(buf, sizeof(buf), "book1/%03d.jpg", pageid);
     loadTexture(buf, texs[0]);
-    snprintf(buf, sizeof(buf), "page%03d.png", pageid + 1);
+    snprintf(buf, sizeof(buf), "book1/%03d.jpg", pageid + 1);
     loadTexture(buf, texs[1]);
     printf("pages %d-%d loaded\n", pageid, pageid + 1);
 }
@@ -76,9 +79,11 @@ void MyApp::calc()
         int cntp = 0, cnt1 = 0, cnt2 = 0;
         static int avgp = 0, avg1 = 0, avg2 = 0;
         depth = kinect->getDepth();
-        for (int i = 0; i < 640*PERSON_B; i++) {
-            if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) {
-                cntp++;
+        for (int y = PERSON_T; y <= PERSON_B; y++) {
+            for (int x = PERSON_L; x < PERSON_R; x++) {
+                if (depth[x+y*640] > PERSON_DMIN && depth[x+y*640] < PERSON_DMAX) {
+                    cntp++;
+                }
             }
         }
         for (int y = BOOK_T; y <= BOOK_B; y++) {
@@ -97,7 +102,7 @@ void MyApp::calc()
         avg1 = (avg1*9 + cnt1) / 10;
         avg2 = (avg2*9 + cnt2) / 10;
 
-        if (avgp >= 5000) {
+        if (avgp >= 2000) {
             if (person == false) {
                 printf("person in\n");
                 person = true;
@@ -107,7 +112,7 @@ void MyApp::calc()
                 alpha1diff = 1;
             }
         } else
-        if (avgp <= 4000) {
+        if (avgp <= 1700) {
             if (person == true) {
                 printf("person out\n");
                 person = false;
@@ -223,12 +228,12 @@ void MyApp::draw()
                 *p = 0; p++;
                 *p = 0; p++;
             } else
-            if (depth[i] > BOOK_DMIN && depth[i] < BOOK_DMAX) { // book
+            if (depth[i] > BOOK_DMIN && depth[i] < BOOK_DMAX && (i%640) > BOOK_L && (i%640) < BOOK_R && (i/640) > BOOK_T && (i/640) < BOOK_B) { // book
                 *p = 0; p++;
                 *p = 128; p++;
                 *p = 128; p++;
             } else
-            if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX) { // person
+            if (depth[i] > PERSON_DMIN && depth[i] < PERSON_DMAX && (i%640) > PERSON_L && (i%640) < PERSON_R && (i/640) > PERSON_T && (i/640) < PERSON_B) { // person
                 *p = 128; p++;
                 *p = 0; p++;
                 *p = 128; p++;
@@ -262,8 +267,19 @@ void MyApp::draw()
             p[(i*640+BOOK_R)*3+1] = 0;
             p[(i*640+BOOK_R)*3+2] = 0;
         }
-        // line for person area
-        for (int i = 0; i < 640; i++) {
+        // rectangle for person area
+        for (int i = PERSON_T; i <= PERSON_B; i++) {
+            p[(i*640+PERSON_L)*3  ] = 0;
+            p[(i*640+PERSON_L)*3+1] = 255;
+            p[(i*640+PERSON_L)*3+2] = 0;
+            p[(i*640+PERSON_R)*3  ] = 0;
+            p[(i*640+PERSON_R)*3+1] = 255;
+            p[(i*640+PERSON_R)*3+2] = 0;
+        }
+        for (int i = PERSON_L; i < PERSON_R; i++) {
+            p[(PERSON_T*640+i)*3  ] = 0;
+            p[(PERSON_T*640+i)*3+1] = 255;
+            p[(PERSON_T*640+i)*3+2] = 0;
             p[(PERSON_B*640+i)*3  ] = 0;
             p[(PERSON_B*640+i)*3+1] = 255;
             p[(PERSON_B*640+i)*3+2] = 0;

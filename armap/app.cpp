@@ -260,7 +260,17 @@ void App::loadTexture(const char *fn, GLuint tex)
 {
     glBindTexture(GL_TEXTURE_2D, tex);
     SDL_Surface *img = IMG_Load(fn);
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+    switch (img->format->BitsPerPixel) {
+        case 8:
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, img->w, img->h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img->pixels);
+            break;
+        case 24:
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, img->w, img->h, 0, GL_RGB, GL_UNSIGNED_BYTE, img->pixels);
+            break;
+        case 32:
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, img->w, img->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+            break;
+    }
     SDL_FreeSurface(img);
 }
 
