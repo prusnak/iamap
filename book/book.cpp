@@ -192,16 +192,16 @@ void MyApp::draw()
         { -(GLfloat)width/2, -(GLfloat)height/2 }
     };
     static const GLfloat vertsA[4][2] = {
-        { -(GLfloat)width/2-8,  (GLfloat)height/2 },
-        {                  -8,  (GLfloat)height/2 },
-        {                  -8, -(GLfloat)height/2 },
-        { -(GLfloat)width/2-8, -(GLfloat)height/2 }
+        {   -(GLfloat)width/2,  (GLfloat)height/2+3 },
+        {                  -9,  (GLfloat)height/2+3 },
+        {                  -9, -(GLfloat)height/2-3 },
+        {   -(GLfloat)width/2, -(GLfloat)height/2-3 }
     };
     static const GLfloat vertsB[4][2] = {
-        {                   8,  (GLfloat)height/2 },
-        {  (GLfloat)width/2+8,  (GLfloat)height/2 },
-        {  (GLfloat)width/2+8, -(GLfloat)height/2 },
-        {                  +8, -(GLfloat)height/2 }
+        {                  +9,  (GLfloat)height/2+3 },
+          {  (GLfloat)width/2,  (GLfloat)height/2+3 },
+        {    (GLfloat)width/2, -(GLfloat)height/2-3 },
+        {                  +9, -(GLfloat)height/2-3 }
     };
     static const GLfloat texcoords[4][2] = {
         {0, 0},
