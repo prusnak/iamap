@@ -279,15 +279,15 @@ void App::GLdraw()
     mat4 matProjection, matModelView;
     const float fH = tan(45*M_PI/360) * 0.1;
     const float fW = fH * width / height;
-    matProjection = mat4().Frustum(-fW, fW, -fH, fH, 0.1, 5000.0);
+    matProjection = mat4::Frustum(-fW, fW, -fH, fH, 0.1, 5000.0);
     glUniformMatrix4fv(u_Projection, 1, GL_FALSE, matProjection.Pointer());
 
     matModelView =
-        mat4().Rotate(-rot.z, vec3(0.0, 0.0, 1.0)) *
-        mat4().Rotate(-rot.x, vec3(0.0, 1.0, 0.0)) *
-        mat4().Translate(mov.x, -mov.y, 0.0) *
-        mat4().Rotate(-rot.y, vec3(1.0, 0.0, 0.0)) *
-        mat4().Translate(0.0, 0.0, -mov.z)
+        mat4::Rotate(-rot.z, vec3(0.0, 0.0, 1.0)) *
+        mat4::Rotate(-rot.x, vec3(0.0, 1.0, 0.0)) *
+        mat4::Translate(mov.x, -mov.y, 0.0) *
+        mat4::Rotate(-rot.y, vec3(1.0, 0.0, 0.0)) *
+        mat4::Translate(0.0, 0.0, -mov.z)
     ;
     glUniformMatrix4fv(u_ModelView, 1, GL_FALSE, matModelView.Pointer());
 
