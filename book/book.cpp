@@ -40,6 +40,9 @@ void MyApp::init()
     pageid = 0;
     pagestate = PAGE_DOWN;
     person = false;
+    mode = 2;
+
+    loadCoords();
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -49,19 +52,19 @@ void MyApp::init()
 #define BOOK_L 240
 #define BOOK_M 320
 #define BOOK_R 400
-#define BOOK_T 275
-#define BOOK_B 350
-#define BOOK_DMIN 1400
-#define BOOK_DMAX 1590
+#define BOOK_T 260
+#define BOOK_B 335
+#define BOOK_DMIN 1330
+#define BOOK_DMAX 1530
 
 #define PERSON_L 150
 #define PERSON_R 470
 #define PERSON_T 0
-#define PERSON_B 220
+#define PERSON_B 200
 #define PERSON_DMIN 900
 #define PERSON_DMAX 2500
 
-#define MAXPAGES 84 // has to be even!
+#define MAXPAGES 108 // has to be even!
 
 void MyApp::loadPages()
 {
@@ -192,16 +195,16 @@ void MyApp::draw()
         { -(GLfloat)width/2, -(GLfloat)height/2 }
     };
     static const GLfloat vertsA[4][2] = {
-        {   -(GLfloat)width/2,  (GLfloat)height/2+3 },
-        {                  -9,  (GLfloat)height/2+3 },
-        {                  -9, -(GLfloat)height/2-3 },
-        {   -(GLfloat)width/2, -(GLfloat)height/2-3 }
+        {   -(GLfloat)width/2,  (GLfloat)height/2-40 },
+        {                   0,  (GLfloat)height/2-40 },
+        {                   0, -(GLfloat)height/2+40 },
+        {   -(GLfloat)width/2, -(GLfloat)height/2+40 }
     };
     static const GLfloat vertsB[4][2] = {
-        {                  +9,  (GLfloat)height/2+3 },
-          {  (GLfloat)width/2,  (GLfloat)height/2+3 },
-        {    (GLfloat)width/2, -(GLfloat)height/2-3 },
-        {                  +9, -(GLfloat)height/2-3 }
+        {                   0,  (GLfloat)height/2-40 },
+        {    (GLfloat)width/2,  (GLfloat)height/2-40 },
+        {    (GLfloat)width/2, -(GLfloat)height/2+40 },
+        {                   0, -(GLfloat)height/2+40 }
     };
     static const GLfloat texcoords[4][2] = {
         {0, 0},
@@ -361,7 +364,8 @@ int main(int argc, char *argv[])
 
     app = new MyApp();
     app->init();
-    kinect->startVideo();
+    SDL_ShowCursor(0);
+    kinect->startDepth();
     app->loop();
 
     delete app;

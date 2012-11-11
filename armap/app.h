@@ -45,6 +45,10 @@ class App {
         GLuint tex;
         GLuint texs[16];
 
+    protected:
+        void loadCoords();
+        void saveCoords();
+
     private:
         void quit(int rc);
         void GLdraw();

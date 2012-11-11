@@ -162,11 +162,30 @@ void main() { \
     }
 }
 
+void App::loadCoords()
+{
+    FILE *f = fopen("armap-coords.dat", "rb");
+    if (!f) return;
+    fread(&mov, sizeof(mov), 1, f);
+    fread(&rot, sizeof(rot), 1, f);
+    fclose(f);
+    printf("Coords read from armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+}
+
+void App::saveCoords()
+{
+    FILE *f = fopen("armap-coords.dat", "wb");
+    if (!f) return;
+    fwrite(&mov, sizeof(mov), 1, f);
+    fwrite(&rot, sizeof(rot), 1, f);
+    fclose(f);
+    printf("Coords written to armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+}
+
 void App::loop()
 {
     GLreshape(width, height);
     done = 0;
-    FILE *f;
     while (!done) {
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -214,7 +233,7 @@ void App::loop()
 
                 case SDL_MOUSEWHEEL:
                     if (SDL_GetModState() & KMOD_LALT) {
-                        rot.z -= event.wheel.y*1;
+                        rot.z -= event.wheel.y*0.5;
                     } else {
                         mov.z -= event.wheel.y*10;
                     }
@@ -230,20 +249,10 @@ void App::loop()
                             done = 1;
                             break;
                         case SDLK_s:
-                            f = fopen("armap-coords.dat", "wb");
-                            if (!f) break;
-                            fwrite(&mov, sizeof(mov), 1, f);
-                            fwrite(&rot, sizeof(rot), 1, f);
-                            fclose(f);
-                            printf("Coords written to armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+                            saveCoords();
                             break;
                         case SDLK_l:
-                            f = fopen("armap-coords.dat", "rb");
-                            if (!f) break;
-                            fread(&mov, sizeof(mov), 1, f);
-                            fread(&rot, sizeof(rot), 1, f);
-                            fclose(f);
-                            printf("Coords read from armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+                            loadCoords();
                             break;
                     }
                     break;
