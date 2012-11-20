@@ -28,6 +28,8 @@
 #include <SDL.h>
 #include <SDL_opengles2.h>
 
+#include "config.h"
+
 class App {
     public:
         App();
@@ -46,8 +48,8 @@ class App {
         GLuint texs[16];
 
     protected:
-        void loadCoords();
-        void saveCoords();
+        void loadConfig();
+        void saveConfig();
 
     private:
         void quit(int rc);
@@ -63,6 +65,7 @@ class App {
         int u_Projection, u_ModelView;
         int done;
         SDL_Event event;
+        Config *config;
 };
 
 #endif

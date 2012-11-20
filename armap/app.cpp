@@ -44,6 +44,7 @@ App::App()
     attr_col = 1;
     attr_tex = 2;
     srand(time(NULL));
+    config = new Config();
 }
 
 void App::init(int width, int height, bool fullscreen)
@@ -162,24 +163,26 @@ void main() { \
     }
 }
 
-void App::loadCoords()
+void App::loadConfig()
 {
-    FILE *f = fopen("armap-coords.dat", "rb");
-    if (!f) return;
-    fread(&mov, sizeof(mov), 1, f);
-    fread(&rot, sizeof(rot), 1, f);
-    fclose(f);
-    printf("Coords read from armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+    config->load("armap.ini");
+    mov.x = config->getFloat("mov.x");
+    mov.y = config->getFloat("mov.y");
+    mov.z = config->getFloat("mov.z");
+    rot.x = config->getFloat("rot.x");
+    rot.y = config->getFloat("rot.y");
+    rot.z = config->getFloat("rot.z");
 }
 
-void App::saveCoords()
+void App::saveConfig()
 {
-    FILE *f = fopen("armap-coords.dat", "wb");
-    if (!f) return;
-    fwrite(&mov, sizeof(mov), 1, f);
-    fwrite(&rot, sizeof(rot), 1, f);
-    fclose(f);
-    printf("Coords written to armap-coords.dat : %f %f %f %f %f %f\n", mov.x, mov.y, mov.z, rot.x, rot.y, rot.z);
+    config->setFloat("mov.x", mov.x);
+    config->setFloat("mov.y", mov.y);
+    config->setFloat("mov.z", mov.z);
+    config->setFloat("rot.x", rot.x);
+    config->setFloat("rot.y", rot.y);
+    config->setFloat("rot.z", rot.z);
+    config->save("armap.ini");
 }
 
 void App::loop()
@@ -249,10 +252,10 @@ void App::loop()
                             done = 1;
                             break;
                         case SDLK_s:
-                            saveCoords();
+                            saveConfig();
                             break;
                         case SDLK_l:
-                            loadCoords();
+                            loadConfig();
                             break;
                     }
                     break;
@@ -319,5 +322,6 @@ void App::quit(int rc)
 App::~App()
 {
     quit(0);
+    delete config;
 }
 

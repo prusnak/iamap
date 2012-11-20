@@ -10,7 +10,7 @@ else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
 LIBS+=$(shell pkg-config --libs glesv2)
 endif
-OBJ_COMMON=armap/app.o armap/kinect.o
+OBJ_COMMON=armap/app.o armap/config.o armap/kinect.o
 OBJ_BOOK=book/book.o
 OBJ_SANDBOX=sandbox/sandbox.o
 
