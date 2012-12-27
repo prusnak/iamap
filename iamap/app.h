@@ -1,5 +1,5 @@
 /*
-    ARMap - Augmented Reality Toy
+    IAMap - InterActive Mapping
     Copyright (C) 2012 Pavol Rusnak
 
     This program is free software: you can redistribute it and/or modify

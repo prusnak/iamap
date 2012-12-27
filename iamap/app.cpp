@@ -1,5 +1,5 @@
 /*
-    ARMap - Augmented Reality Toy
+    IAMap - InterActive Mapping
     Copyright (C) 2012 Pavol Rusnak
 
     This program is free software: you can redistribute it and/or modify
@@ -63,9 +63,9 @@ void App::init(int width, int height, bool fullscreen)
     }
 
     if (!fullscreen) {
-        window = SDL_CreateWindow("ARMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
+        window = SDL_CreateWindow("IAMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
     } else {
-        window = SDL_CreateWindow("ARMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
+        window = SDL_CreateWindow("IAMap", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS);
     }
 
     context = SDL_GL_CreateContext(window);
@@ -165,7 +165,7 @@ void main() { \
 
 void App::loadConfig()
 {
-    config->load("armap.ini");
+    config->load("iamap.ini");
     mov.x = config->getFloat("mov.x");
     mov.y = config->getFloat("mov.y");
     mov.z = config->getFloat("mov.z");
@@ -182,7 +182,7 @@ void App::saveConfig()
     config->setFloat("rot.x", rot.x);
     config->setFloat("rot.y", rot.y);
     config->setFloat("rot.z", rot.z);
-    config->save("armap.ini");
+    config->save("iamap.ini");
 }
 
 void App::loop()

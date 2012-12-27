@@ -1,5 +1,5 @@
 /*
-    ARMap - Augmented Reality Toy
+    IAMap - InterActive Mapping
     Copyright (c) 2010 OpenKinect Project
     Copyright (C) 2012 Pavol Rusnak
 
@@ -22,7 +22,7 @@
 #include <cstring>
 #include <cmath>
 #include <pthread.h>
-#include "armap.h"
+#include "iamap.h"
 
 void Kinect::depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 {

@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-Iarmap $(shell pkg-config --cflags libfreenect sdl2) -Wall -fno-exceptions
+CXXFLAGS=-Iiamap $(shell pkg-config --cflags libfreenect sdl2) -Wall -fno-exceptions
 LDFLAGS=-pthread
 LIBS=$(shell pkg-config --libs libfreenect sdl2) -lm -lSDL_image
 ifeq ($(shell test -d /opt/vc/include && echo 1),1)
@@ -10,7 +10,7 @@ else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
 LIBS+=$(shell pkg-config --libs glesv2)
 endif
-OBJ_COMMON=armap/app.o armap/config.o armap/kinect.o
+OBJ_COMMON=iamap/app.o iamap/config.o iamap/kinect.o
 OBJ_BOOK=book/book.o
 OBJ_SANDBOX=sandbox/sandbox.o
 
