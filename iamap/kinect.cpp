@@ -1,5 +1,5 @@
 /*
-    IAMap - InterActive Mapping
+    iaMap - InterActive Mapping
     Copyright (c) 2010 OpenKinect Project
     Copyright (C) 2012 Pavol Rusnak
 
