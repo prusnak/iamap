@@ -12,6 +12,7 @@ class MyApp: public App {
         int lvlmax;
         uint8_t rgbtex[640*480*3];
         uint8_t grid[640*480*3];
+        uint16_t depth[640*480];
 };
 
 Kinect *kinect;
@@ -59,6 +60,7 @@ void MyApp::init()
         grid[(i*640+639)*3+1] = 255;
     }
 
+    memset(depth, 0, sizeof(depth));
     memset(rgbtex, 0, sizeof(rgbtex));
 }
 
@@ -93,9 +95,29 @@ void MyApp::draw()
         case 1:  // video
             glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
             break;
-        case 2:  // depth
-            if (!palette) break;
+        case 2:  // depth - no avg
+        case 3:  // depth - short avg
+        case 4:  // depth - long avg
             d = kinect->getDepth();
+            if (mode == 3) {
+                for (int i = 0; i < 640*480; i++) {
+                    if (d[i]) {
+                        int v = d[i] + depth[i]*3;
+                        depth[i] = v/4;
+                    }
+                }
+                d = depth;
+            }
+            if (mode == 4) {
+                for (int i = 0; i < 640*480; i++) {
+                    if (d[i]) {
+                        int v = d[i] + depth[i]*31;
+                        depth[i] = v/32;
+                    }
+                }
+                d = depth;
+            }
+            if (!d || !palette) break;
             for (int i = 0; i < 640*480; i++) {
                 if (d[i]) {
                     int c = palette->getColor(d[i]);
@@ -159,15 +181,20 @@ bool MyApp::handleEvent(SDL_Event event)
                     kinect->startVideo();
                     mode = 1;
                     return true;
-                case SDLK_3:  // depth
+                case SDLK_3:  // depth - no avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
                     return true;
-                case SDLK_4:  // depth avg
+                case SDLK_4:  // depth - short avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 3;
+                    return true;
+                case SDLK_5:  // depth - long avg
+                    kinect->stopVideo();
+                    kinect->startDepth();
+                    mode = 4;
                     return true;
                 case SDLK_z:  // screenshot
                     kinect->startVideo();
