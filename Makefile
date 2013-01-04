@@ -10,7 +10,7 @@ else
 CXXFLAGS+=$(shell pkg-config --cflags glesv2)
 LIBS+=$(shell pkg-config --libs glesv2)
 endif
-OBJ_COMMON=iamap/app.o iamap/config.o iamap/kinect.o
+OBJ_COMMON=iamap/app.o iamap/config.o iamap/kinect.o iamap/palette.o
 OBJ_BOOK=book/book.o
 OBJ_SANDBOX=sandbox/sandbox.o
 

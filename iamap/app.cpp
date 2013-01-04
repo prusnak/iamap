@@ -45,6 +45,7 @@ App::App()
     attr_tex = 2;
     srand(time(NULL));
     config = new Config();
+    palette = new Palette();
 }
 
 void App::init(int width, int height, bool fullscreen)
@@ -165,7 +166,7 @@ void main() { \
 
 void App::loadConfig()
 {
-    config->load("iamap.ini");
+    if (!config->load("iamap.ini")) return;
     mov.x = config->getFloat("mov.x");
     mov.y = config->getFloat("mov.y");
     mov.z = config->getFloat("mov.z");
@@ -191,6 +192,9 @@ void App::loop()
     done = 0;
     while (!done) {
         while (SDL_PollEvent(&event)) {
+
+            if ( handleEvent(event) ) continue;
+
             switch (event.type) {
 
                 case SDL_WINDOWEVENT:
@@ -260,7 +264,6 @@ void App::loop()
                     }
                     break;
             }
-            handleEvent(event);
         }
         calc();
         GLdraw();
@@ -323,5 +326,7 @@ App::~App()
 {
     quit(0);
     delete config;
+    config = 0;
+    delete palette;
+    palette = 0;
 }
-

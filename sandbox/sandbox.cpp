@@ -4,11 +4,13 @@ class MyApp: public App {
     public:
         void init();
         void draw();
-        void handleEvent(SDL_Event event);
+        bool handleEvent(SDL_Event event);
     private:
         int mode;
-        uint8_t depth8[640*480];
-        uint32_t depth32[640*480];
+        int lvlmode;
+        int lvlmin;
+        int lvlmax;
+        uint8_t rgbtex[640*480*3];
         uint8_t grid[640*480*3];
 };
 
@@ -20,6 +22,19 @@ void MyApp::init()
     App::init(640, 480, false);
 
     mode = 0;
+    lvlmode = 0;
+    palette->load("palette-calib.txt");
+    lvlmin = config->getInt("lvlmin");
+    lvlmax = config->getInt("lvlmax");
+    if (!lvlmin) {
+        lvlmin = 2000;
+        config->setInt("lvlmin", lvlmin);
+    }
+    if (!lvlmax) {
+        lvlmax = 3000;
+        config->setInt("lvlmax", lvlmax);
+    }
+    palette->rehash(lvlmin, lvlmax);
 
     // initialize green grid
     memset(grid, 0, sizeof(grid));
@@ -44,8 +59,7 @@ void MyApp::init()
         grid[(i*640+639)*3+1] = 255;
     }
 
-    memset(depth8, 0, sizeof(depth8));
-    memset(depth32, 0, sizeof(depth32));
+    memset(rgbtex, 0, sizeof(rgbtex));
 }
 
 void MyApp::draw()
@@ -80,25 +94,31 @@ void MyApp::draw()
             glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, kinect->getVideo());
             break;
         case 2:  // depth
-            d = kinect->getDepth();
-            for (int i = 0; i < 640*480; i++) {
-                unsigned char c = d[i]*255/5000;
-                if (c) c = 255 - c;
-                depth8[i] = c;
-            }
-            glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
-            break;
-        case 3:  // depth avg
+            if (!palette) break;
             d = kinect->getDepth();
             for (int i = 0; i < 640*480; i++) {
                 if (d[i]) {
-                    depth32[i] = ((d[i]<<16)*4 + depth32[i]*12) / 16;
+                    int c = palette->getColor(d[i]);
+                    rgbtex[i*3  ] = (c >> 16) & 0xFF;
+                    rgbtex[i*3+1] = (c >> 8) & 0xFF;
+                    rgbtex[i*3+2] = c & 0xFF;
+                } else {
+                    rgbtex[i*3  ] = 0;
+                    rgbtex[i*3+1] = 0;
+                    rgbtex[i*3+2] = 0;
                 }
-                unsigned char c = (depth32[i]>>8)/5000;
-                if (c) c = 255 - c;
-                depth8[i] = c;
             }
-            glTexImage2D(GL_TEXTURE_2D, 0, 1, 640, 480, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth8);
+            if (lvlmode) {
+                for (int i = 0; i < 640; i++) {
+                    int c = palette->getColor(i*palette->PALETTE_LEN/640);
+                    for (int j = 0; j < 10; j++) {
+                        rgbtex[i*3+j*640*3  ] = (c >> 16) & 0xFF;
+                        rgbtex[i*3+j*640*3+1] = (c >> 8) & 0xFF;
+                        rgbtex[i*3+j*640*3+2] = c & 0xFF;
+                    }
+                }
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, 3, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, rgbtex);
             break;
     }
 
@@ -114,39 +134,84 @@ void MyApp::draw()
     glDisableVertexAttribArray(attr_tex);
 }
 
-void MyApp::handleEvent(SDL_Event event)
+bool MyApp::handleEvent(SDL_Event event)
 {
     switch (event.type) {
+        case SDL_KEYDOWN:
+            switch (event.key.keysym.sym) {
+                case SDLK_LEFTBRACKET:
+                    lvlmode = 1;
+                    return true;
+                case SDLK_RIGHTBRACKET:
+                    lvlmode = 2;
+                    return true;
+            }
+            break;
         case SDL_KEYUP:
             switch (event.key.keysym.sym) {
                 case SDLK_1:  // grid
                     kinect->stopVideo();
                     kinect->stopDepth();
                     mode = 0;
-                    break;
+                    return true;
                 case SDLK_2:  // video
                     kinect->stopDepth();
                     kinect->startVideo();
                     mode = 1;
-                    break;
+                    return true;
                 case SDLK_3:  // depth
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
-                    break;
+                    return true;
                 case SDLK_4:  // depth avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 3;
-                    break;
+                    return true;
                 case SDLK_z:  // screenshot
                     kinect->startVideo();
                     kinect->getVideo(); // dummy for now
                     kinect->startVideo();
-                    break;
+                    return true;
+                case SDLK_q:
+                    palette->load("palette-calib.txt");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_w:
+                    palette->load("palette-geo.txt");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_e:
+                    palette->load("palette-fire.txt");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_r:
+                    palette->load("palette-bluered.txt");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_LEFTBRACKET:
+                case SDLK_RIGHTBRACKET:
+                    lvlmode = 0;
+                    return true;
+            }
+            break;
+        case SDL_MOUSEWHEEL:
+            if (lvlmode == 1) {
+                lvlmin -= event.wheel.y*10;
+                config->setInt("lvlmin", lvlmin);
+                palette->rehash(lvlmin, lvlmax);
+                return true;
+            }
+            if (lvlmode == 2) {
+                lvlmax += event.wheel.y*10;
+                config->setInt("lvlmax", lvlmax);
+                palette->rehash(lvlmin, lvlmax);
+                return true;
             }
             break;
     }
+    return false;
 }
 
 int main(int argc, char *argv[])
@@ -163,4 +228,3 @@ int main(int argc, char *argv[])
     delete kinect;
     return 0;
 }
-
