@@ -13,7 +13,7 @@ class MyApp: public App {
         void init();
         void calc();
         void draw();
-        void handleEvent(SDL_Event event);
+        bool handleEvent(SDL_Event event);
         void loadPages();
     private:
         int mode;
@@ -329,7 +329,7 @@ void MyApp::draw()
     }
 }
 
-void MyApp::handleEvent(SDL_Event event)
+bool MyApp::handleEvent(SDL_Event event)
 {
     switch (event.type) {
         case SDL_KEYUP:
@@ -338,20 +338,21 @@ void MyApp::handleEvent(SDL_Event event)
                     kinect->stopDepth();
                     kinect->startVideo();
                     mode = 0;
-                    break;
+                    return true;
                 case SDLK_2:  // depth
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 1;
-                    break;
+                    return true;
                 case SDLK_3:  // real thing
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
-                    break;
+                    return true;
             }
             break;
     }
+    return false;
 }
 
 int main(int argc, char *argv[])
