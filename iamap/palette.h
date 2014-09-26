@@ -9,7 +9,7 @@ class Palette {
         Palette();
         ~Palette();
         bool load(const char *filename);
-        inline int getColor(int val) { if (val >= 0 && val < PALETTE_LEN) return hash[val]; else return 0; }
+        inline int getColor(int val) { if (val >= 0 && val < PALETTE_LEN) return hash[PALETTE_LEN-1-val]; else return 0; }
         void rehash(int minval, int maxval);
         static const int PALETTE_LEN = 6000;
 

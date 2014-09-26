@@ -20,7 +20,7 @@ MyApp *app;
 
 void MyApp::init()
 {
-    App::init(640, 480, false);
+    App::init(1024, 768, false);
 
     mode = 0;
     lvlmode = 0;
@@ -97,7 +97,8 @@ void MyApp::draw()
             break;
         case 2:  // depth - no avg
         case 3:  // depth - short avg
-        case 4:  // depth - long avg
+        case 4:  // depth - med avg
+        case 5:  // depth - long avg
             d = kinect->getDepth();
             if (mode == 3) {
                 for (int i = 0; i < 640*480; i++) {
@@ -111,8 +112,17 @@ void MyApp::draw()
             if (mode == 4) {
                 for (int i = 0; i < 640*480; i++) {
                     if (d[i]) {
-                        int v = d[i] + depth[i]*31;
-                        depth[i] = v/32;
+                        int v = d[i]*4 + depth[i]*60;
+                        depth[i] = v/64;
+                    }
+                }
+                d = depth;
+            }
+            if (mode == 5) {
+                for (int i = 0; i < 640*480; i++) {
+                    if (d[i]) {
+                        int v = d[i]*1 + depth[i]*63;
+                        depth[i] = v/64;
                     }
                 }
                 d = depth;
@@ -175,26 +185,37 @@ bool MyApp::handleEvent(SDL_Event event)
                     kinect->stopVideo();
                     kinect->stopDepth();
                     mode = 0;
+                    printf("mode = grid\n");
                     return true;
                 case SDLK_2:  // video
                     kinect->stopDepth();
                     kinect->startVideo();
                     mode = 1;
+                    printf("mode = video\n");
                     return true;
                 case SDLK_3:  // depth - no avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
+                    printf("mode = depth (no avg)\n");
                     return true;
                 case SDLK_4:  // depth - short avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 3;
+                    printf("mode = depth (short avg)\n");
                     return true;
-                case SDLK_5:  // depth - long avg
+                case SDLK_5:  // depth - medium avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 4;
+                    printf("mode = depth (medium avg)\n");
+                    return true;
+                case SDLK_6:  // depth - long avg
+                    kinect->stopVideo();
+                    kinect->startDepth();
+                    mode = 5;
+                    printf("mode = depth (long avg)\n");
                     return true;
                 case SDLK_z:  // screenshot
                     kinect->startVideo();
@@ -203,18 +224,26 @@ bool MyApp::handleEvent(SDL_Event event)
                     return true;
                 case SDLK_q:
                     palette->load("palette-calib.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
                 case SDLK_w:
                     palette->load("palette-geo.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
                 case SDLK_e:
                     palette->load("palette-fire.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
                 case SDLK_r:
                     palette->load("palette-bluered.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
                 case SDLK_LEFTBRACKET:
