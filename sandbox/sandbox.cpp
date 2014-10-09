@@ -181,37 +181,37 @@ bool MyApp::handleEvent(SDL_Event event)
             break;
         case SDL_KEYUP:
             switch (event.key.keysym.sym) {
-                case SDLK_1:  // grid
+                case SDLK_q:  // grid
                     kinect->stopVideo();
                     kinect->stopDepth();
                     mode = 0;
                     printf("mode = grid\n");
                     return true;
-                case SDLK_2:  // video
+                case SDLK_w:  // video
                     kinect->stopDepth();
                     kinect->startVideo();
                     mode = 1;
                     printf("mode = video\n");
                     return true;
-                case SDLK_3:  // depth - no avg
+                case SDLK_e:  // depth - no avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 2;
                     printf("mode = depth (no avg)\n");
                     return true;
-                case SDLK_4:  // depth - short avg
+                case SDLK_r:  // depth - short avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 3;
                     printf("mode = depth (short avg)\n");
                     return true;
-                case SDLK_5:  // depth - medium avg
+                case SDLK_t:  // depth - medium avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 4;
                     printf("mode = depth (medium avg)\n");
                     return true;
-                case SDLK_6:  // depth - long avg
+                case SDLK_y:  // depth - long avg
                     kinect->stopVideo();
                     kinect->startDepth();
                     mode = 5;
@@ -222,26 +222,38 @@ bool MyApp::handleEvent(SDL_Event event)
                     kinect->getVideo(); // dummy for now
                     kinect->startVideo();
                     return true;
-                case SDLK_q:
+                case SDLK_1:
                     palette->load("palette-calib.txt");
                     lvlmin = config->getInt("lvlmin");
                     lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
-                case SDLK_w:
+                case SDLK_2:
                     palette->load("palette-geo.txt");
                     lvlmin = config->getInt("lvlmin");
                     lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
-                case SDLK_e:
+                case SDLK_3:
                     palette->load("palette-fire.txt");
                     lvlmin = config->getInt("lvlmin");
                     lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
                     return true;
-                case SDLK_r:
+                case SDLK_4:
                     palette->load("palette-bluered.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_5:
+                    palette->load("palette-deepsea.txt");
+                    lvlmin = config->getInt("lvlmin");
+                    lvlmax = config->getInt("lvlmax");
+                    palette->rehash(lvlmin, lvlmax);
+                    return true;
+                case SDLK_6:
+                    palette->load("palette-skyline.txt");
                     lvlmin = config->getInt("lvlmin");
                     lvlmax = config->getInt("lvlmax");
                     palette->rehash(lvlmin, lvlmax);
@@ -272,7 +284,6 @@ bool MyApp::handleEvent(SDL_Event event)
 
 int main(int argc, char *argv[])
 {
-
     kinect = Kinect::create();
     if (!kinect) return 1;
 
